@@ -70,7 +70,13 @@ body, html, #root {
 .luto-atmosphere {
   position: relative;
   isolation: isolate;
-  background: radial-gradient(circle at 65% 45%, #08090d 0%, var(--luto-void) 100%);
+  background-image:
+    linear-gradient(to right, rgba(4, 5, 8, 0.65) 0%, rgba(4, 5, 8, 0.3) 48%, rgba(4, 5, 8, 0.02) 75%, rgba(4, 5, 8, 0.15) 100%),
+    linear-gradient(to bottom, rgba(4, 5, 8, 0.3) 0%, transparent 40%, rgba(4, 5, 8, 0.4) 100%),
+    url('/landing-bg.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -85,7 +91,7 @@ body, html, #root {
   z-index: 50;
   background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 0);
   background-size: 3px 3px;
-  opacity: 0.4;
+  opacity: 0.2;
   animation: film-jitter 0.2s steps(2) infinite;
 }
 
@@ -95,112 +101,102 @@ body, html, #root {
   100% { transform: translate(-0.5px, 0.5px); }
 }
 
-/* Living Breathing Radial Vignette */
+/* Living Breathing Radial Vignette - Light & Subtle */
 .luto-atmosphere::after {
   content: "";
   pointer-events: none;
   position: fixed;
   inset: 0;
   z-index: 49;
-  background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(1, 2, 3, 0.96) 100%);
+  background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(1, 2, 3, 0.4) 100%);
   animation: horror-breathe 7s ease-in-out infinite alternate;
 }
 
 @keyframes horror-breathe {
-  0% { opacity: 0.9; transform: scale(1); }
-  50% { opacity: 0.98; transform: scale(1.03); }
-  100% { opacity: 0.92; transform: scale(0.99); }
+  0% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(1.02); }
+  100% { opacity: 0.35; transform: scale(0.99); }
 }
 
 /* ==========================================================================
-   THE SHROUDED DOORWAY & HAUNTING CORRIDOR
+   GATE SADAKO APPARITION (OCCASIONAL SECTOR 01 SPAWN)
    ========================================================================== */
-
-.luto-lore-backdrop {
+.gate-sadako-anchor {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  overflow: hidden;
-}
-
-.luto-corridor-silhouette {
-  position: absolute;
-  right: 14%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 320px;
-  height: 500px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-bottom: none;
-  background: linear-gradient(180deg, rgba(15, 18, 24, 0.5) 0%, rgba(2, 3, 5, 0.98) 100%);
-  box-shadow: 0 0 140px rgba(0, 0, 0, 0.95), inset 0 0 50px rgba(0, 0, 0, 0.95);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  animation: horror-light-flicker 9s infinite;
-}
-
-.luto-doorway-inner {
-  width: 72%;
-  height: 86%;
-  border: 1px solid rgba(255, 255, 255, 0.035);
-  border-bottom: none;
-  background: radial-gradient(circle at 50% 75%, rgba(185, 28, 28, 0.12) 0%, rgba(0, 0, 0, 0.98) 75%);
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.98);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-/* Sadako Yamamura (Ringu) Entity Styles - Completely Stable & Motionless */
-.luto-ghost-wrapper {
-  position: absolute;
-  bottom: 0;
-  width: 150px;
+  right: 22%;
+  bottom: 22%;
+  width: 130px;
   height: 270px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
+  z-index: 5;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.gate-sadako-figure {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
   opacity: 0;
-  transform: none;
-  transition: opacity 0.8s ease-in-out;
+  transform: scale(0.92);
+  transition: opacity 1.2s ease-in-out, transform 1.2s ease-in-out;
   pointer-events: none;
 }
 
-.luto-ghost-wrapper::after {
-  content: "";
-  position: absolute;
-  bottom: -4px;
-  width: 90px;
-  height: 12px;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.95) 0%, transparent 70%);
-  filter: blur(3px);
+.gate-sadako-figure.active {
+  opacity: 0.94;
+  transform: scale(1);
+  pointer-events: auto;
 }
 
-.luto-ghost-wrapper.manifested {
-  opacity: 0.95;
-  transform: none;
-  animation: none;
+.gate-sadako-figure.crawling {
+  transform: translateY(30px) scale(0.95);
 }
 
-.luto-ghost-wrapper.jumpscare {
-  opacity: 1 !important;
-  transform: none !important;
-  filter: drop-shadow(0 0 45px rgba(220, 38, 38, 0.95)) contrast(1.6);
-  animation: none !important;
-}
-
-.luto-sadako-png {
-  height: 100%;
-  max-height: 270px;
+.gate-sadako-img {
+  max-height: 260px;
   width: auto;
   object-fit: contain;
-  filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.98)) drop-shadow(0 0 12px rgba(220, 38, 38, 0.35)) brightness(0.88) contrast(1.2);
+  filter: contrast(1.5) brightness(0.72) drop-shadow(0 0 25px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 15px rgba(220, 38, 38, 0.5));
+  animation: sadakoGhostBreathing 4s ease-in-out infinite alternate;
+}
+
+@keyframes sadakoGhostBreathing {
+  0% { filter: contrast(1.4) brightness(0.68) drop-shadow(0 0 20px rgba(0, 0, 0, 0.95)); }
+  50% { filter: contrast(1.6) brightness(0.85) drop-shadow(0 0 30px rgba(220, 38, 38, 0.65)); }
+  100% { filter: contrast(1.4) brightness(0.72) drop-shadow(0 0 25px rgba(0, 0, 0, 0.95)); }
+}
+
+/* Red Emergency Light Glow under the Doorway Lamp */
+.gate-door-red-glow {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 110px;
+  background: radial-gradient(ellipse at center, rgba(220, 38, 38, 0.6) 0%, rgba(220, 38, 38, 0.15) 50%, transparent 80%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s ease;
+  filter: blur(6px);
+}
+
+.gate-door-red-glow.active {
+  opacity: 1;
+  animation: lampFlicker 2s infinite;
+}
+
+@keyframes lampFlicker {
+  0%, 100% { opacity: 0.9; }
+  25% { opacity: 0.4; }
+  35% { opacity: 0.95; }
+  70% { opacity: 0.6; }
 }
 
 .luto-jumpscare-sadako-img {
@@ -309,31 +305,33 @@ body, html, #root {
   color: var(--luto-bone);
   text-transform: uppercase;
   line-height: 1.1;
-  text-shadow: 0 0 35px rgba(255, 255, 255, 0.08);
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.95), 0 0 50px rgba(0, 0, 0, 0.85);
 }
 
 .title-lore-prologue {
   margin-top: 1.5rem;
   font-size: 0.92rem;
   line-height: 1.85;
-  color: var(--luto-bone-dim);
+  color: #e2e8f0;
   font-weight: 300;
   letter-spacing: 0.04em;
-  border-left: 2px solid rgba(185, 28, 28, 0.5);
-  padding-left: 1.25rem;
-  background: rgba(185, 28, 28, 0.03);
-  padding-top: 0.6rem;
-  padding-bottom: 0.6rem;
-  border-radius: 0 4px 4px 0;
+  padding: 0.9rem 1.4rem;
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 2.5px solid #dc2626;
+  border-radius: 0 6px 6px 0;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.9);
 }
 
 .title-sub-heading {
   margin-top: 1rem;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   line-height: 1.7;
-  color: var(--luto-muted);
+  color: #cbd5e1;
   font-weight: 400;
   letter-spacing: 0.03em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95);
+  max-width: 38rem;
 }
 
 .title-menu-group {
@@ -993,7 +991,7 @@ body, html, #root {
   inset: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #040406;
+  background-color: #000000;
   color: #f1f2f6;
   display: flex;
   flex-direction: column;
@@ -1009,7 +1007,7 @@ body, html, #root {
 .prologue-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(20, 4, 8, 0.2) 0%, rgba(3, 3, 5, 0.95) 75%, #020203 100%);
+  background: radial-gradient(circle at 50% 50%, rgba(15, 2, 5, 0.4) 0%, rgba(0, 0, 0, 0.98) 75%, #000000 100%);
   pointer-events: none;
   z-index: 1;
 }
