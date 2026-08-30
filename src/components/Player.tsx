@@ -44,8 +44,13 @@ export const Player = () => {
   // Reset player position safely on level change or game enter
   useEffect(() => {
     if (ref.current) {
-      const spawnZ = currentLevel === 3 ? 10 : currentLevel === 5 ? 12 : 6;
-      ref.current.setTranslation({ x: 0, y: 1.2, z: spawnZ }, true);
+      const spawnPos =
+        currentLevel === 3
+          ? { x: 0.44, y: 1.2, z: -0.36 }
+          : currentLevel === 5
+          ? { x: 0, y: 1.2, z: 12 }
+          : { x: 0, y: 1.2, z: 6 };
+      ref.current.setTranslation(spawnPos, true);
       ref.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       ref.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
     }
@@ -157,7 +162,7 @@ export const Player = () => {
       const obj = hit.object;
       const interactData = obj.userData;
 
-      if (interactData && interactData.isInteractable) {
+      if (interactData && interactData.interactable) {
         foundInteractable = true;
         if (hoveredObject !== interactData.name) {
           setHoveredObject(interactData.name);

@@ -26,13 +26,13 @@ export const LevelLighting: React.FC = () => {
       serverLightRef.current.intensity = 2.0 + Math.sin(t * 2.5) * 0.5;
     }
 
-    // Level 3: Reactor core pulse
+    // Level 3: Bathroom flicker
     if (reactorLightRef.current && currentLevel === 3) {
-      reactorLightRef.current.intensity = 3.2 + Math.sin(t * 3.2) * 1.0;
+      const flicker = Math.sin(t * 9) * Math.cos(t * 15);
+      reactorLightRef.current.intensity = 1.6 + (flicker > 0.7 ? 0.3 : -0.4);
     }
     if (reactorBeaconRef.current && currentLevel === 3) {
-      reactorBeaconRef.current.position.x = Math.sin(t * 1.8) * 8;
-      reactorBeaconRef.current.position.z = Math.cos(t * 1.8) * 8;
+      reactorBeaconRef.current.intensity = 1.2 + Math.sin(t * 3) * 0.4;
     }
 
     // Level 4: Debug Wing purple neon glitch pulse
@@ -94,33 +94,32 @@ export const LevelLighting: React.FC = () => {
         </>
       )}
 
-      {/* ----------------- LEVEL 3: REACTOR CORE LIGHTING ----------------- */}
+      {/* ----------------- LEVEL 3: BATHROOM LIGHTING ----------------- */}
       {currentLevel === 3 && (
         <>
-          <fog attach="fog" args={['#1c0a0a', 20, 52]} />
-          <ambientLight intensity={1.1} color="#fca5a5" />
+          <fog attach="fog" args={['#140f0c', 6, 16]} />
+          <ambientLight intensity={0.5} color="#c9b8a3" />
+          {/* Flickering ceiling fixture */}
           <pointLight
             ref={reactorLightRef}
-            position={[0, 4.0, 0]}
-            intensity={3.8}
-            distance={35}
-            color="#ff5722"
+            position={[0.44, 2.4, -0.36]}
+            intensity={1.6}
+            distance={7}
+            color="#f5deb3"
             castShadow
           />
-          <spotLight
+          {/* Candle glow near the mirror */}
+          <pointLight
             ref={reactorBeaconRef}
-            position={[8, 8.5, 8]}
-            angle={0.65}
-            penumbra={0.4}
-            intensity={4.0}
-            color="#ff1744"
-            target-position={[0, 0, 0]}
+            position={[1.11, 1.6, 0.81]}
+            intensity={1.2}
+            distance={3.5}
+            color="#ffb347"
           />
-          <pointLight position={[-8, 2.5, -8]} intensity={2.8} distance={15} color="#00e5ff" />
-          <pointLight position={[0, 4.2, 14]} intensity={2.6} distance={16} color="#ffffff" />
-          <pointLight position={[13.5, 3, -8]} intensity={1.7} distance={14} color="#fdba74" />
-          <pointLight position={[-13.5, 3, 8]} intensity={1.7} distance={14} color="#fdba74" />
-          <pointLight position={[0, 3, -13.5]} intensity={1.7} distance={14} color="#fdba74" />
+          {/* Cold moonlight through the window */}
+          <pointLight position={[2.57, 1.6, -2.42]} intensity={1.0} distance={4} color="#7dd3fc" />
+          {/* Dim fill near the door */}
+          <pointLight position={[-1.2, 1.8, 0.9]} intensity={0.6} distance={3} color="#94a3b8" />
         </>
       )}
 
