@@ -87,8 +87,8 @@ interface GameState {
   setIsGeneratingPuzzle: (val: boolean) => void;
   escaped: boolean;
   setEscaped: (val: boolean) => void;
-  appState: 'LANDING' | 'LEVEL_SELECT' | 'PLAYING';
-  setAppState: (state: 'LANDING' | 'LEVEL_SELECT' | 'PLAYING') => void;
+  appState: 'LANDING' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING';
+  setAppState: (state: 'LANDING' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING') => void;
   currentLevel: number;
   setCurrentLevel: (level: number) => void;
   resetLevel: () => void;
