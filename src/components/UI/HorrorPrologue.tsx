@@ -30,8 +30,8 @@ export const HorrorPrologue: React.FC<HorrorPrologueProps> = ({ onComplete }) =>
   const [isDone, setIsDone] = useState(false);
   const [bpm, setBpm] = useState(55);
 
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
+const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Heartbeat sound loop matching current BPM
   useEffect(() => {
