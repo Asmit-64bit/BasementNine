@@ -7,6 +7,7 @@ export type Puzzle = {
   codeSnippet?: string;
   answer: string[];
   reward: string;
+  nextClue?: string;
 };
 
 export const puzzles: Puzzle[] = [
