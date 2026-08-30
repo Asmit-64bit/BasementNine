@@ -15,6 +15,11 @@ import {
   Timer,
   Trophy,
   FileText,
+  BookOpen,
+  Copy,
+  Check,
+  Terminal,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   generateGeminiPuzzle,
@@ -60,10 +65,13 @@ export const GameUI: React.FC = () => {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
-  const [showHint, setShowHint] = useState(false);
   const [isLoadingPuzzle, setIsLoadingPuzzle] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
+
+  // Clean Modal Tabs & Educational Debrief State
+  const [activeModalTab, setActiveModalTab] = useState<'terminal' | 'hint' | 'debrief'>('terminal');
+  const [copiedTakeaway, setCopiedTakeaway] = useState(false);
 
   // REPL Sandbox State
   const [showRepl, setShowRepl] = useState(false);
@@ -593,23 +601,79 @@ export const GameUI: React.FC = () => {
                   PSYCHOLOGICAL DOSSIER // CHAPTER 0{currentLevel}
                 </span>
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  fontSize: '9px',
-                  letterSpacing: '0.14em',
-                  color: isAiGenerated ? '#f4f5f8' : '#8b929e',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  padding: '3px 8px',
-                  borderRadius: '3px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                }}
-              >
-                <Sparkles size={10} />
-                <span>{isAiGenerated ? 'SYNCHRONIZED' : 'ANOMALY NODE'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {activePuzzle?.debrief?.difficulty && (
+                  <span
+                    style={{
+                      fontSize: '8.5px',
+                      letterSpacing: '0.14em',
+                      color:
+                        activePuzzle.debrief.difficulty === 'Expert'
+                          ? '#ef4444'
+                          : activePuzzle.debrief.difficulty === 'Advanced'
+                          ? '#f59e0b'
+                          : '#10b981',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      padding: '2px 7px',
+                      borderRadius: '3px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {activePuzzle.debrief.difficulty.toUpperCase()}
+                  </span>
+                )}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '8.5px',
+                    letterSpacing: '0.14em',
+                    color: isAiGenerated ? '#f4f5f8' : '#8b929e',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    padding: '2px 7px',
+                    borderRadius: '3px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                >
+                  <Sparkles size={9} />
+                  <span>{isAiGenerated ? 'SYNCHRONIZED' : 'ANOMALY NODE'}</span>
+                </div>
               </div>
+            </div>
+
+            {/* Clean Minimalist Tab Bar */}
+            <div className="dossier-tabs-bar">
+              <button
+                type="button"
+                onClick={() => setActiveModalTab('terminal')}
+                className={`dossier-tab-btn ${activeModalTab === 'terminal' ? 'active' : ''}`}
+              >
+                <Terminal size={12} />
+                <span>TERMINAL</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveModalTab('hint');
+                  recordHintUse();
+                }}
+                className={`dossier-tab-btn ${activeModalTab === 'hint' ? 'active' : ''}`}
+              >
+                <HelpCircle size={12} />
+                <span>CLUE</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveModalTab('debrief')}
+                className={`dossier-tab-btn ${activeModalTab === 'debrief' ? 'active' : ''}`}
+              >
+                <BookOpen size={12} />
+                <span>FORENSIC DEBRIEF</span>
+              </button>
             </div>
 
             {/* Loading State */}
@@ -622,210 +686,290 @@ export const GameUI: React.FC = () => {
               </div>
             ) : activePuzzle ? (
               <>
-                <h2 className="dossier-title">{activePuzzle.title}</h2>
-                <p className="dossier-scenario">{activePuzzle.scenario}</p>
+                {/* TAB 1: TERMINAL & REPL */}
+                {activeModalTab === 'terminal' && (
+                  <>
+                    <h2 className="dossier-title">{activePuzzle.title}</h2>
+                    <p className="dossier-scenario">{activePuzzle.scenario}</p>
 
-                {activePuzzle.codeSnippet && activePuzzle.codeSnippet.trim() !== '' && (
-                  <pre
-                    style={{
-                      background: 'rgba(0, 0, 0, 0.65)',
-                      padding: '0.9rem 1.2rem',
-                      borderRadius: '4px',
-                      border: '1px solid var(--luto-border)',
-                      color: '#e2e8f0',
-                      fontSize: '0.85rem',
-                      overflowX: 'auto',
-                      marginBottom: '1.25rem',
-                      fontFamily: 'JetBrains Mono, monospace',
-                    }}
-                  >
-                    <code>{activePuzzle.codeSnippet}</code>
-                  </pre>
-                )}
-
-                {/* Sandbox / Clue Controls */}
-                <div style={{ marginBottom: '1rem', display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowRepl((prev) => !prev)}
-                    className="carousel-nav-link"
-                    style={{ fontSize: '10px' }}
-                  >
-                    <Code2 size={12} />
-                    <span>{showRepl ? 'HIDE RUNNER' : 'LOGIC SANDBOX'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowHint((prev) => !prev);
-                      if (!showHint) recordHintUse();
-                    }}
-                    className="carousel-nav-link"
-                    style={{ fontSize: '10px' }}
-                  >
-                    <HelpCircle size={12} />
-                    <span>{showHint ? 'HIDE CLUE' : 'MEMORY CLUE'}</span>
-                  </button>
-                </div>
-
-                {/* Clue Drawer */}
-                {showHint && (
-                  <div
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      borderLeft: '2px solid rgba(255, 255, 255, 0.4)',
-                      padding: '8px 12px',
-                      fontSize: '11px',
-                      color: '#cbd5e1',
-                      marginBottom: '1rem',
-                    }}
-                  >
-                    <strong>WHISPER:</strong> {activePuzzle.hint || 'Examine logic state boundaries.'}
-                  </div>
-                )}
-
-                {/* JS Sandbox */}
-                {showRepl && (
-                  <div
-                    style={{
-                      background: 'rgba(0, 0, 0, 0.75)',
-                      border: '1px solid var(--luto-border)',
-                      borderRadius: '4px',
-                      padding: '10px',
-                      marginBottom: '1rem',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '10px', color: '#8b929e', fontWeight: 600, letterSpacing: '0.1em' }}>
-                        LOGIC SCRIPT EXECUTION
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleRunRepl}
-                        disabled={isExecutingRepl}
-                        className="carousel-nav-link"
-                        style={{ padding: '3px 8px', fontSize: '10px' }}
-                      >
-                        <Play size={10} />
-                        <span>RUN</span>
-                      </button>
-                    </div>
-                    <textarea
-                      value={replCode}
-                      onChange={(e) => setReplCode(e.target.value)}
-                      rows={4}
-                      style={{
-                        width: '100%',
-                        background: 'rgba(4, 5, 7, 0.95)',
-                        border: '1px solid var(--luto-border)',
-                        color: '#f4f5f8',
-                        fontFamily: 'JetBrains Mono, monospace',
-                        fontSize: '11px',
-                        padding: '8px',
-                        borderRadius: '3px',
-                        outline: 'none',
-                        resize: 'vertical',
-                      }}
-                    />
-                    {replOutput.length > 0 && (
-                      <div
+                    {activePuzzle.codeSnippet && activePuzzle.codeSnippet.trim() !== '' && (
+                      <pre
                         style={{
-                          marginTop: '6px',
-                          background: 'rgba(0, 0, 0, 0.85)',
-                          padding: '6px 8px',
-                          borderRadius: '3px',
-                          fontSize: '10.5px',
-                          maxHeight: '90px',
-                          overflowY: 'auto',
-                          color: '#cbd5e1',
-                          borderTop: '1px solid var(--luto-border)',
+                          background: 'rgba(0, 0, 0, 0.65)',
+                          padding: '0.9rem 1.2rem',
+                          borderRadius: '4px',
+                          border: '1px solid var(--luto-border)',
+                          color: '#e2e8f0',
+                          fontSize: '0.85rem',
+                          overflowX: 'auto',
+                          marginBottom: '1rem',
                           fontFamily: 'JetBrains Mono, monospace',
                         }}
                       >
-                        {replOutput.map((log, i) => (
-                          <div key={i} style={{ color: log.startsWith('[EXEC') ? '#f87171' : '#f4f5f8' }}>
-                            {log}
+                        <code>{activePuzzle.codeSnippet}</code>
+                      </pre>
+                    )}
+
+                    {/* REPL Sandbox Runner */}
+                    {showRepl && (
+                      <div
+                        style={{
+                          background: 'rgba(0, 0, 0, 0.75)',
+                          border: '1px solid var(--luto-border)',
+                          borderRadius: '4px',
+                          padding: '10px',
+                          marginBottom: '1rem',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '10px', color: '#8b929e', fontWeight: 600, letterSpacing: '0.1em' }}>
+                            LOGIC SCRIPT EXECUTION
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleRunRepl}
+                            disabled={isExecutingRepl}
+                            className="carousel-nav-link"
+                            style={{ padding: '3px 8px', fontSize: '10px' }}
+                          >
+                            <Play size={10} />
+                            <span>RUN</span>
+                          </button>
+                        </div>
+                        <textarea
+                          value={replCode}
+                          onChange={(e) => setReplCode(e.target.value)}
+                          rows={3}
+                          style={{
+                            width: '100%',
+                            background: 'rgba(4, 5, 7, 0.95)',
+                            border: '1px solid var(--luto-border)',
+                            color: '#f4f5f8',
+                            fontFamily: 'JetBrains Mono, monospace',
+                            fontSize: '11px',
+                            padding: '8px',
+                            borderRadius: '3px',
+                            outline: 'none',
+                            resize: 'vertical',
+                          }}
+                        />
+                        {replOutput.length > 0 && (
+                          <div
+                            style={{
+                              marginTop: '6px',
+                              background: 'rgba(0, 0, 0, 0.85)',
+                              padding: '6px 8px',
+                              borderRadius: '3px',
+                              fontSize: '10.5px',
+                              maxHeight: '90px',
+                              overflowY: 'auto',
+                              color: '#cbd5e1',
+                              borderTop: '1px solid var(--luto-border)',
+                              fontFamily: 'JetBrains Mono, monospace',
+                            }}
+                          >
+                            {replOutput.map((log, i) => (
+                              <div key={i} style={{ color: log.startsWith('[EXEC') ? '#f87171' : '#f4f5f8' }}>
+                                {log}
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
+
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        borderLeft: '2px solid rgba(255, 255, 255, 0.3)',
+                        color: '#f4f5f8',
+                        fontSize: '0.85rem',
+                        fontWeight: 500,
+                        marginBottom: '1rem',
+                      }}
+                    >
+                      {activePuzzle.question}
+                    </div>
+
+                    <form onSubmit={handlePuzzleSubmit}>
+                      <input
+                        type="text"
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        placeholder="Enter resolution sequence..."
+                        disabled={isEvaluating}
+                        autoFocus
+                        className="dossier-input"
+                      />
+
+                      {error && (
+                        <div style={{ color: '#f87171', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                          <AlertCircle size={14} /> {error}
+                        </div>
+                      )}
+
+                      {feedback && (
+                        <div style={{ color: '#10b981', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                          <CheckCircle2 size={14} /> {feedback}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.25rem' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActivePuzzle(null);
+                              setError('');
+                              setFeedback('');
+                              setAnswer('');
+                            }}
+                            className="carousel-nav-link"
+                          >
+                            CLOSE
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowRepl((prev) => !prev)}
+                            className="carousel-nav-link"
+                            style={{ fontSize: '10px' }}
+                          >
+                            <Code2 size={11} />
+                            <span>{showRepl ? 'HIDE RUNNER' : 'SANDBOX'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRegeneratePuzzle}
+                            disabled={isLoadingPuzzle || isEvaluating}
+                            className="carousel-nav-link"
+                            title="Reconstruct variation"
+                          >
+                            <RefreshCw size={11} />
+                            <span>RE-ROLL</span>
+                          </button>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={isEvaluating}
+                          className="chapter-action-btn"
+                          style={{ margin: 0, width: 'auto', padding: '8px 24px' }}
+                        >
+                          {isEvaluating ? 'CONFRONTING...' : 'TRANSMIT →'}
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
+
+                {/* TAB 2: SOCRATIC CLUE */}
+                {activeModalTab === 'hint' && (
+                  <div className="dossier-debrief-card">
+                    <div>
+                      <div className="debrief-section-title">
+                        <HelpCircle size={12} color="#f59e0b" />
+                        <span>SUPPRESSED MEMORY CLUE</span>
+                      </div>
+                      <p className="debrief-text" style={{ fontStyle: 'italic', color: '#f1f5f9' }}>
+                        "{activePuzzle.hint || 'Examine logic state boundaries and control flow.'}"
+                      </p>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '9px', color: '#8b929e', letterSpacing: '0.12em' }}>
+                        TOPIC: {activePuzzle.debrief?.domain || 'CYBERSECURITY & LOGIC'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveModalTab('terminal')}
+                        className="carousel-nav-link"
+                        style={{ padding: '4px 10px', fontSize: '9.5px' }}
+                      >
+                        ← RETURN TO TERMINAL
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                <div
-                  style={{
-                    padding: '10px 14px',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    borderLeft: '2px solid rgba(255, 255, 255, 0.3)',
-                    color: '#f4f5f8',
-                    fontSize: '0.85rem',
-                    fontWeight: 500,
-                    marginBottom: '1.25rem',
-                  }}
-                >
-                  {activePuzzle.question}
-                </div>
-
-                <form onSubmit={handlePuzzleSubmit}>
-                  <input
-                    type="text"
-                    value={answer}
-                    onChange={(e) => setAnswer(e.target.value)}
-                    placeholder="Enter resolution sequence..."
-                    disabled={isEvaluating}
-                    autoFocus
-                    className="dossier-input"
-                  />
-
-                  {error && (
-                    <div style={{ color: '#f87171', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
-                      <AlertCircle size={14} /> {error}
+                {/* TAB 3: FORENSIC DEBRIEF */}
+                {activeModalTab === 'debrief' && (
+                  <div className="dossier-debrief-card">
+                    {/* Key Takeaway */}
+                    <div>
+                      <div className="debrief-section-title">
+                        <ShieldCheck size={12} color="#10b981" />
+                        <span>VULNERABILITY & LOGIC ANATOMY</span>
+                      </div>
+                      <p className="debrief-text">
+                        {activePuzzle.debrief?.keyTakeaway || 'This challenge tests foundational programming invariants and secure state handling.'}
+                      </p>
                     </div>
-                  )}
 
-                  {feedback && (
-                    <div style={{ color: '#f4f5f8', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
-                      <CheckCircle2 size={14} /> {feedback}
+                    {/* Real World Impact */}
+                    <div>
+                      <div className="debrief-section-title">
+                        <AlertCircle size={12} color="#ef4444" />
+                        <span>REAL-WORLD INCIDENT / CVE IMPACT</span>
+                      </div>
+                      <p className="debrief-text">
+                        {activePuzzle.debrief?.realWorldImpact || 'Improper handling of this vulnerability pattern can lead to denial of service or unauthorized state changes.'}
+                      </p>
                     </div>
-                  )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Remediation Code Snippet */}
+                    {activePuzzle.debrief?.remediationCode && (
+                      <div>
+                        <div className="debrief-section-title">
+                          <Code2 size={12} color="#38bdf8" />
+                          <span>RECOMMENDED DEFENSIVE FIX</span>
+                        </div>
+                        <pre
+                          style={{
+                            background: 'rgba(0, 0, 0, 0.75)',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: '#e2e8f0',
+                            fontSize: '0.82rem',
+                            overflowX: 'auto',
+                            margin: 0,
+                            fontFamily: 'JetBrains Mono, monospace',
+                          }}
+                        >
+                          <code>{activePuzzle.debrief.remediationCode}</code>
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* Copy Key Takeaway Button */}
+                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <button
                         type="button"
                         onClick={() => {
-                          setActivePuzzle(null);
-                          setError('');
-                          setFeedback('');
-                          setAnswer('');
+                          const note = `[Basement Nine - Learning Dossier]\nTopic: ${activePuzzle.debrief?.domain || 'Logic'}\nDifficulty: ${activePuzzle.debrief?.difficulty || 'Standard'}\nKey Takeaway: ${activePuzzle.debrief?.keyTakeaway || ''}\nReal-World Impact: ${activePuzzle.debrief?.realWorldImpact || ''}\nRemediation:\n${activePuzzle.debrief?.remediationCode || ''}`;
+                          navigator.clipboard.writeText(note);
+                          setCopiedTakeaway(true);
+                          setTimeout(() => setCopiedTakeaway(false), 2000);
                         }}
                         className="carousel-nav-link"
+                        style={{ padding: '4px 10px', fontSize: '9.5px' }}
                       >
-                        CLOSE
+                        {copiedTakeaway ? <Check size={11} color="#10b981" /> : <Copy size={11} />}
+                        <span>{copiedTakeaway ? 'COPIED TO CLIPBOARD' : 'COPY DOSSIER NOTE'}</span>
                       </button>
+
                       <button
                         type="button"
-                        onClick={handleRegeneratePuzzle}
-                        disabled={isLoadingPuzzle || isEvaluating}
+                        onClick={() => setActiveModalTab('terminal')}
                         className="carousel-nav-link"
-                        title="Reconstruct variation"
+                        style={{ padding: '4px 10px', fontSize: '9.5px' }}
                       >
-                        <RefreshCw size={11} />
-                        <span>RE-ROLL (AI)</span>
+                        ← RETURN TO TERMINAL
                       </button>
                     </div>
-
-                    <button
-                      type="submit"
-                      disabled={isEvaluating}
-                      className="chapter-action-btn"
-                      style={{ margin: 0, width: 'auto', padding: '8px 24px' }}
-                    >
-                      {isEvaluating ? 'CONFRONTING...' : 'TRANSMIT →'}
-                    </button>
                   </div>
-                </form>
+                )}
               </>
             ) : null}
           </div>
