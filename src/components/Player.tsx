@@ -48,7 +48,9 @@ export const Player = () => {
         currentLevel === 3
           ? { x: 0.44, y: 1.2, z: -0.36 }
           : currentLevel === 5
-          ? { x: 0, y: 1.2, z: 12 }
+          ? { x: 0, y: 1.2, z: 0 }
+          : currentLevel === 4
+          ? { x: 0, y: 1.2, z: 3 }
           : { x: 0, y: 1.2, z: 6 };
       ref.current.setTranslation(spawnPos, true);
       ref.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
