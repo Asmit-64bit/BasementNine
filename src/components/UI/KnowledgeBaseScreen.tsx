@@ -5,9 +5,32 @@ import { BookOpen, Terminal } from 'lucide-react';
 
 export const KnowledgeBaseScreen: React.FC = () => {
   const { setAppState, selectedDomain } = useGameStore();
-  const knowledgeText = selectedDomain && DOMAIN_KNOWLEDGE_BASES[selectedDomain] 
-    ? DOMAIN_KNOWLEDGE_BASES[selectedDomain] 
-    : 'NO DATA FOUND FOR DESIGNATED SECTOR.';
+  const [knowledgeText, setKnowledgeText] = React.useState('GENERATING DOSSIER FROM MAINFRAME...');
+
+  React.useEffect(() => {
+    if (!selectedDomain) {
+      setKnowledgeText('NO DATA FOUND FOR DESIGNATED SECTOR.');
+      return;
+    }
+    
+    // First, try to see if it's already generated or fetch it
+    fetch('/api/ai/knowledge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain: selectedDomain })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.text) {
+        setKnowledgeText(data.text);
+      } else {
+        setKnowledgeText(DOMAIN_KNOWLEDGE_BASES[selectedDomain] || 'ERROR: FALLBACK DATA USED.\\n\\n' + data.error);
+      }
+    })
+    .catch(err => {
+      setKnowledgeText(DOMAIN_KNOWLEDGE_BASES[selectedDomain] || 'CRITICAL FAILURE: DOSSIER CORRUPTED.');
+    });
+  }, [selectedDomain]);
 
   return (
     <div

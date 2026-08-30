@@ -87,9 +87,14 @@ function markKeyExhausted(key, index, errorReason, status = 429) {
   state.failCount += 1;
   state.lastError = `[${status}] ${errorReason}`;
   // If credit exhaustion (402/403/billing), keep cooldown longer (15 mins)
-  state.cooldownMs = (status === 402 || status === 403 || String(errorReason).toLowerCase().includes('quota'))
-    ? 15 * 60 * 1000
-    : 3 * 60 * 1000;
+  // If it's a 429 rate limit, Gemini free tier usually resets in 30-60 seconds, so use a much shorter cooldown
+  if (status === 402 || status === 403) {
+    state.cooldownMs = 15 * 60 * 1000;
+  } else if (status === 429 || String(errorReason).toLowerCase().includes('quota')) {
+    state.cooldownMs = 35 * 1000; // 35 seconds
+  } else {
+    state.cooldownMs = 60 * 1000; // 1 min default
+  }
 
   console.warn(
     `⚠️ [Gemini Key Rotator] Key #${index + 1} (••••${key.slice(-4)}) marked EXHAUSTED (${status}: ${errorReason}). Switching to next key in pool...`

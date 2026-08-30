@@ -51,19 +51,14 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               const knowledgeBase = data.knowledgeBase || '';
 
               const systemInstruction = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
-You generate coding / cybersecurity escape room puzzles.
-
-CRITICAL INSTRUCTION: You MUST ONLY generate questions and code snippets based strictly on the concepts explicitly mentioned in the provided KNOWLEDGE BASE. Do not invent outside concepts.`;
+You generate coding / cybersecurity escape room puzzles.`;
 
               const userPrompt = `Generate puzzle for:
 Sector: ${context.level}
 Terminal Name: "${context.objectName}"
 Domain Focus: ${domain}
 Difficulty Level: ${difficulty}
-Expected Reward on Solve: "${context.reward}"
-
---- KNOWLEDGE BASE ---
-${knowledgeBase}`;
+Expected Reward on Solve: "${context.reward}"`;
 
               const { executeGeminiWithRotation } = await import('./server/geminiKeyPool.js');
 
@@ -176,6 +171,74 @@ ${knowledgeBase}`;
                   },
                 })
               );
+            } catch (e: any) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: e?.message || 'Server error' }));
+            }
+          });
+          return;
+        }
+
+        // POST /api/ai/knowledge
+        if (req.method === 'POST' && req.url === '/api/ai/knowledge') {
+          let body = '';
+          req.on('data', (c) => (body += c));
+          req.on('end', async () => {
+            try {
+              const data = body ? JSON.parse(body) : {};
+              const domain = data.domain || 'General Programming';
+              const clientKey = req.headers['x-goog-api-key'] || data.customApiKey;
+
+              const { executeGeminiWithRotation } = await import('./server/geminiKeyPool.js');
+
+              const jsonResult: any = await executeGeminiWithRotation(
+                async (apiKey) => {
+                  const models = [
+                    env.VITE_GEMINI_MODEL || 'gemini-3.6-flash',
+                    'gemini-3.6-flash',
+                    'gemini-3.5-flash',
+                    'gemini-2.5-flash',
+                  ];
+
+                  let lastErr = null;
+                  for (const m of models) {
+                    try {
+                      const gRes = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
+                        {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
+                          body: JSON.stringify({
+                            systemInstruction: { parts: [{ text: "You are a highly advanced AI core providing a technical dossier." }] },
+                            contents: [{ role: 'user', parts: [{ text: `Generate a short, 3-point technical knowledge base dossier for the domain: "${domain}". Format as plain text with bullet points, no markdown headers.` }] }],
+                            generationConfig: { responseMimeType: 'text/plain', temperature: 0.7 },
+                          }),
+                        }
+                      );
+
+                      if (!gRes.ok) {
+                        const errText = await gRes.text();
+                        const err: any = new Error(errText || \`Gemini API HTTP \${gRes.status}\`);
+                        err.status = gRes.status;
+                        throw err;
+                      }
+
+                      const gData = await gRes.json();
+                      const raw = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                      if (raw) return raw;
+                    } catch (err: any) {
+                      lastErr = err;
+                      if (err.status === 429 || err.status === 402 || err.status === 403) throw err;
+                    }
+                  }
+                  throw lastErr || new Error('Gemini generation failed');
+                },
+                clientKey,
+                env
+              );
+
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              return res.end(JSON.stringify({ text: jsonResult }));
             } catch (e: any) {
               res.writeHead(500, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: e?.message || 'Server error' }));
