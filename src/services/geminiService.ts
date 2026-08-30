@@ -154,12 +154,7 @@ export function getGeminiApiKey(): string {
     }
   }
 
-  // Check Vite environment variables (server/build time env)
-  const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-  if (envKey && typeof envKey === 'string' && envKey.trim().length > 0) {
-    return envKey.trim();
-  }
-
+  // Client-side only reads custom user-provided override if saved by player
   return '';
 }
 
