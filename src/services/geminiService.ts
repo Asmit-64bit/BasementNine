@@ -240,7 +240,7 @@ export async function generateGeminiPuzzle(
     'gemini-3.6-flash';
 
   const prompt = `
-You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
+You are the corrupted sentient core of a paranormal facility called "Basement Nine".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context?.level || 1} on the "${context?.objectName || 'Terminal'}".
 
 Topic: ${context?.topic || 'Programming & Security'}

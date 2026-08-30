@@ -265,7 +265,7 @@ export const HorrorPrologue: React.FC<HorrorPrologueProps> = ({ onComplete }) =>
                     onComplete();
                   }}
                 >
-                  <span>STEP INTO THE ABYSS</span>
+                  <span>STEP INTO BASEMENT NINE</span>
                   <ArrowRight size={16} />
                 </button>
               </div>

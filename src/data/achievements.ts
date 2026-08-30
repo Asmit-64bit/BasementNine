@@ -9,7 +9,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first_breach',
     title: 'Terminal Initiate',
-    description: 'Solve your first anomaly puzzle in the Abyss.',
+    description: 'Solve your first anomaly puzzle in Basement Nine.',
     icon: '⚡',
   },
   {
@@ -39,7 +39,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'quantum_sovereign',
     title: 'Quantum Sovereign',
-    description: 'Breach and purge all 5 Sectors of Schrodinger’s Abyss.',
+    description: 'Breach and purge all 5 Sectors of Basement Nine.',
     icon: '🧬',
   },
 ];

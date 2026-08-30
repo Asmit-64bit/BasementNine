@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { RigidBody } from '@react-three/rapier';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -11,14 +11,10 @@ export const ReactorCore: React.FC = () => {
   const doorBeaconRef = useRef<THREE.MeshStandardMaterial>(null);
   const { staticScene, doorLeaf } = useBathroomScene();
 
-  // The door leaf is rendered outside the room's static collider so it can
-  // be hidden once the player escapes, instead of permanently blocking the
-  // doorway.
-  useEffect(() => {
-    if (doorLeaf) doorLeaf.visible = !escaped;
-  }, [doorLeaf, escaped]);
-
   useFrame(({ clock }) => {
+    if (doorLeaf) {
+      doorLeaf.visible = !escaped;
+    }
     const t = clock.getElapsedTime();
     if (cabinetGlowRef.current) {
       cabinetGlowRef.current.emissiveIntensity = hasItem('Coolant Override')
