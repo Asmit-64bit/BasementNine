@@ -333,9 +333,26 @@ Format your output strictly as a JSON object adhering to this schema:
       };
 
       // Automatically archive generated question to database in background
-      handleSaveQuestion(validated, process.env).catch(() => {});
+      handleSaveQuestion(
+        {
+          question: validated.question,
+          domain: validated.domain,
+          tags: validated.tags,
+          difficulty: validated.difficulty,
+          title: validated.title,
+          scenario: validated.scenario,
+          code_snippet: validated.codeSnippet,
+          answer: validated.answer,
+          hint: validated.hint,
+          explanation: validated.explanation,
+          sector_level: validated.level,
+        },
+        process.env
+      ).catch((err) => {
+        console.warn('Could not archive question to Supabase:', err?.message);
+      });
 
-      return sendJson(res, 200, validated);
+      return sendJson(res, 200, { puzzle: validated, ...validated });
     } catch (err) {
       return sendJson(res, 500, { error: err.message || 'Internal Server Error' });
     }

@@ -1,5 +1,6 @@
 import type { Puzzle } from '../data/puzzles';
 import { puzzles as defaultPuzzles } from '../data/puzzles';
+import { apiClient } from '../lib/apiClient';
 
 export interface PuzzleContext {
   id: number;
@@ -311,7 +312,7 @@ Format your output strictly as a JSON object adhering to this schema:
       throw new Error('Gemini did not return a valid puzzle structure');
     }
 
-    return {
+    const generatedPuzzle: Puzzle = {
       id: puzzleId,
       level: context?.level || defaultFallback.level,
       title: jsonResult.title || defaultFallback.title,
@@ -320,8 +321,28 @@ Format your output strictly as a JSON object adhering to this schema:
       codeSnippet: jsonResult.codeSnippet ?? defaultFallback.codeSnippet,
       answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer)],
       reward: context?.reward || defaultFallback.reward,
+      hint: jsonResult.hint,
       nextClue: jsonResult.nextClue || defaultFallback.nextClue || "The signal is fading... seek the next anomaly.",
     };
+
+    // Automatically archive to Supabase database
+    apiClient
+      .saveQuestion({
+        question: generatedPuzzle.question,
+        domain: (context as any)?.domain || 'Programming Fundamentals',
+        tags: (context as any)?.tags || [`sector-${generatedPuzzle.level}`],
+        difficulty: (context?.difficulty === 'Beginner' ? 'Easy' : context?.difficulty) || 'Intermediate',
+        title: generatedPuzzle.title,
+        scenario: generatedPuzzle.scenario,
+        code_snippet: generatedPuzzle.codeSnippet,
+        answer: generatedPuzzle.answer,
+        hint: jsonResult.hint,
+        explanation: jsonResult.explanation || 'Mainframe integrity verified.',
+        sector_level: generatedPuzzle.level,
+      })
+      .catch(() => {});
+
+    return generatedPuzzle;
   } catch {
     return defaultFallback;
   }

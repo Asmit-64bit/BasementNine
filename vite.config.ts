@@ -85,6 +85,31 @@ Format your output strictly as a JSON object adhering to this schema:
                 return res.end(JSON.stringify({ error: 'Gemini puzzle generation failed' }));
               }
 
+              // Automatically archive newly generated question to Supabase
+              try {
+                const { handleSaveQuestion } = await import('./server/supabaseService.js');
+                handleSaveQuestion(
+                  {
+                    question: jsonResult.question,
+                    domain: context.domain,
+                    tags: context.tags,
+                    difficulty: context.difficulty,
+                    title: jsonResult.title,
+                    scenario: jsonResult.scenario,
+                    code_snippet: jsonResult.codeSnippet ?? '',
+                    answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer)],
+                    hint: jsonResult.hint,
+                    explanation: jsonResult.explanation || 'Mainframe bypass verified.',
+                    sector_level: context.level,
+                  },
+                  env
+                ).catch((err: any) => {
+                  console.warn('Could not archive question to Supabase:', err?.message);
+                });
+              } catch {
+                // Ignore if backend service unavailable
+              }
+
               res.writeHead(200, { 'Content-Type': 'application/json' });
               return res.end(
                 JSON.stringify({
