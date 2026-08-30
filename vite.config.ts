@@ -51,7 +51,8 @@ Format your output strictly as a JSON object adhering to this schema:
   "question": string,
   "codeSnippet": string,
   "answer": string[],
-  "hint": string
+  "hint": string,
+  "nextClue": "a cryptic lore clue pointing to the next puzzle"
 }`;
 
               const models = [env.VITE_GEMINI_MODEL || 'gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
@@ -96,6 +97,7 @@ Format your output strictly as a JSON object adhering to this schema:
                     codeSnippet: jsonResult.codeSnippet ?? '',
                     answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer)],
                     reward: context.reward,
+                    nextClue: jsonResult.nextClue || "The signal is fading... seek the next anomaly.",
                   },
                 })
               );
