@@ -33,6 +33,32 @@ export interface AuthResponse {
   error?: string;
 }
 
+export type QuestionDifficulty = 'Easy' | 'Intermediate' | 'Advanced' | 'Expert';
+
+export interface GeneratedQuestion {
+  id: string;
+  question: string;
+  domain: string;
+  tags: string[];
+  difficulty: QuestionDifficulty;
+  title?: string;
+  scenario?: string;
+  code_snippet?: string;
+  answer?: string[];
+  hint?: string;
+  explanation?: string;
+  sector_level?: number;
+  created_by?: string;
+  created_at?: string;
+}
+
+export interface QuestionFilters {
+  domain?: string;
+  difficulty?: QuestionDifficulty;
+  sector_level?: number;
+  limit?: number;
+}
+
 export function getStoredToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -139,6 +165,26 @@ export const apiClient = {
   async resetProfile(): Promise<{ profile: ProfileData; success: boolean }> {
     return request<{ profile: ProfileData; success: boolean }>('/api/profile/reset', {
       method: 'POST',
+    });
+  },
+
+  // 8. Get Archived Generated Questions
+  async getQuestions(filters: QuestionFilters = {}): Promise<{ questions: GeneratedQuestion[] }> {
+    const params = new URLSearchParams();
+    if (filters.domain) params.set('domain', filters.domain);
+    if (filters.difficulty) params.set('difficulty', filters.difficulty);
+    if (filters.sector_level) params.set('sector_level', String(filters.sector_level));
+    if (filters.limit) params.set('limit', String(filters.limit));
+
+    const qs = params.toString();
+    return request<{ questions: GeneratedQuestion[] }>(`/api/questions${qs ? `?${qs}` : ''}`);
+  },
+
+  // 9. Save Generated Question
+  async saveQuestion(questionData: Partial<GeneratedQuestion>): Promise<{ question: GeneratedQuestion; success: boolean }> {
+    return request<{ question: GeneratedQuestion; success: boolean }>('/api/questions', {
+      method: 'POST',
+      body: JSON.stringify(questionData),
     });
   },
 };

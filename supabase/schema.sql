@@ -22,10 +22,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS password_hash TEXT;
 
--- 3. Enable Row Level Security (RLS)
+-- 3. Enable Row Level Security (RLS) on profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 4. RLS Security Policies
+-- 4. RLS Security Policies for profiles
 DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 CREATE POLICY "Users can view their own profile" 
 ON public.profiles FOR SELECT 
@@ -78,3 +78,47 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ==============================================================================
+-- 6. Generated Questions / Mainframe Puzzles Table
+-- Stores generated escape room questions categorized by domain and 4 standardized
+-- difficulty tiers: 'Easy', 'Intermediate', 'Advanced', 'Expert'
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.generated_questions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  question TEXT NOT NULL,
+  domain TEXT NOT NULL DEFAULT 'Programming Fundamentals',
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  difficulty TEXT NOT NULL DEFAULT 'Easy' CHECK (difficulty IN ('Easy', 'Intermediate', 'Advanced', 'Expert')),
+  title TEXT,
+  scenario TEXT,
+  code_snippet TEXT,
+  answer TEXT[] NOT NULL DEFAULT '{}',
+  hint TEXT,
+  explanation TEXT,
+  sector_level INTEGER NOT NULL DEFAULT 1,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS on generated_questions
+ALTER TABLE public.generated_questions ENABLE ROW LEVEL SECURITY;
+
+-- Policies for generated_questions
+DROP POLICY IF EXISTS "Public can view generated questions" ON public.generated_questions;
+CREATE POLICY "Public can view generated questions" 
+ON public.generated_questions FOR SELECT 
+USING (true);
+
+DROP POLICY IF EXISTS "Anyone can insert generated questions" ON public.generated_questions;
+CREATE POLICY "Anyone can insert generated questions" 
+ON public.generated_questions FOR INSERT 
+WITH CHECK (true);
+
+-- Performance Indexes for search and filtration across domain & difficulty
+CREATE INDEX IF NOT EXISTS idx_questions_domain ON public.generated_questions(domain);
+CREATE INDEX IF NOT EXISTS idx_questions_difficulty ON public.generated_questions(difficulty);
+CREATE INDEX IF NOT EXISTS idx_questions_domain_difficulty ON public.generated_questions(domain, difficulty);
+CREATE INDEX IF NOT EXISTS idx_questions_tags ON public.generated_questions USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_questions_sector ON public.generated_questions(sector_level);

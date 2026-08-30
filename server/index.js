@@ -8,6 +8,8 @@ import {
   handleGetProfile,
   handleSyncProfile,
   handleResetProfile,
+  handleSaveQuestion,
+  handleGetQuestions,
   authenticateUser,
   getSupabaseAdmin,
 } from './supabaseService.js';
@@ -40,21 +42,21 @@ loadEnv();
 const PORT = process.env.PORT || 3001;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
 
-const PUZZLE_SLOTS = {
-  1: { level: 1, objectName: 'Laboratory Computer', reward: 'Gold Key', topic: 'Python or JavaScript Syntax / Basic Logic', difficulty: 'Beginner' },
-  2: { level: 1, objectName: 'Locked Drawer Console', reward: 'Master Key', topic: 'Loop Control / Infinite Loop Prevention / Off-by-one', difficulty: 'Beginner' },
-  3: { level: 1, objectName: 'Sector 1 Exit Terminal', reward: 'Escape', topic: 'SQL Injection / Web Vulnerabilities / Authentication Bypass', difficulty: 'Intermediate' },
-  4: { level: 2, objectName: 'Faulty Server Rack', reward: 'Server Key', topic: 'React Hooks Lifecycle / useEffect Dependency Array / State Management', difficulty: 'Intermediate' },
-  5: { level: 2, objectName: 'Network Router Terminal', reward: 'Admin Card', topic: 'Regular Expressions (Regex) / Network Filtering / Port Matching', difficulty: 'Intermediate' },
-  6: { level: 2, objectName: 'Sector 2 Blast Door', reward: 'Escape', topic: 'Cryptographic Hashing (MD5/SHA) / Salt / Password Security', difficulty: 'Intermediate' },
-  7: { level: 3, objectName: 'Coolant Core Console', reward: 'Coolant Override', topic: 'Memory Leaks / Event Listener Cleanup / Garbage Collection', difficulty: 'Advanced' },
-  8: { level: 3, objectName: 'Reactor Final Lockdown Terminal', reward: 'Escape', topic: 'REST API Methods (PUT vs POST vs PATCH) / Idempotency / HTTP Security', difficulty: 'Advanced' },
-  9: { level: 4, objectName: 'Corrupted Memory Shard', reward: 'Memory Bypass Key', topic: 'C/C++ Memory Allocation (malloc/free) / Pointers / Heap Corruption', difficulty: 'Advanced' },
-  10: { level: 4, objectName: 'Deconstructed Debug Console', reward: 'Cipher Chip', topic: 'Binary Bitwise Shifts / Masks / Hex Registers', difficulty: 'Advanced' },
-  11: { level: 4, objectName: 'Anomaly Containment Gate', reward: 'Escape', topic: 'Race Conditions / Mutex Locks / Concurrency Synchronization', difficulty: 'Advanced' },
-  12: { level: 5, objectName: 'Quantum Synthesizer Core', reward: 'Singularity Prism', topic: 'Graph Traversal (BFS / DFS / Topological Sort) / Data Structures', difficulty: 'Advanced' },
-  13: { level: 5, objectName: 'Gravity Inversion Hub', reward: 'Omni Core', topic: 'Dynamic Programming / Memoization / Big-O Time Complexity', difficulty: 'Advanced' },
-  14: { level: 5, objectName: 'Final Gateway Extraction Portal', reward: 'Escape', topic: 'Zero-Knowledge Proofs / Cryptographic Key Exchange / Consensus Protocols', difficulty: 'Advanced' },
+export const PUZZLE_SLOTS = {
+  1: { level: 1, objectName: 'Laboratory Computer', reward: 'Gold Key', topic: 'Python or JavaScript Syntax / Basic Logic', difficulty: 'Easy', domain: 'Programming Fundamentals', tags: ['syntax', 'python', 'javascript', 'logic', 'sector-1'] },
+  2: { level: 1, objectName: 'Locked Drawer Console', reward: 'Master Key', topic: 'Loop Control / Infinite Loop Prevention / Off-by-one', difficulty: 'Easy', domain: 'Control Flow & Logic', tags: ['loops', 'control-flow', 'debugging', 'sector-1'] },
+  3: { level: 1, objectName: 'Sector 1 Exit Terminal', reward: 'Escape', topic: 'SQL Injection / Web Vulnerabilities / Authentication Bypass', difficulty: 'Intermediate', domain: 'Web Security', tags: ['sql-injection', 'security', 'auth-bypass', 'sector-1'] },
+  4: { level: 2, objectName: 'Faulty Server Rack', reward: 'Server Key', topic: 'React Hooks Lifecycle / useEffect Dependency Array / State Management', difficulty: 'Intermediate', domain: 'Frontend Development', tags: ['react', 'hooks', 'lifecycle', 'sector-2'] },
+  5: { level: 2, objectName: 'Network Router Terminal', reward: 'Admin Card', topic: 'Regular Expressions (Regex) / Network Filtering / Port Matching', difficulty: 'Intermediate', domain: 'Networking & Regex', tags: ['regex', 'networking', 'string-matching', 'sector-2'] },
+  6: { level: 2, objectName: 'Sector 2 Blast Door', reward: 'Escape', topic: 'Cryptographic Hashing (MD5/SHA) / Salt / Password Security', difficulty: 'Intermediate', domain: 'Cryptography & Security', tags: ['hashing', 'md5', 'sha', 'passwords', 'sector-2'] },
+  7: { level: 3, objectName: 'Coolant Core Console', reward: 'Coolant Override', topic: 'Memory Leaks / Event Listener Cleanup / Garbage Collection', difficulty: 'Advanced', domain: 'Systems & Performance', tags: ['memory-leaks', 'cleanup', 'performance', 'sector-3'] },
+  8: { level: 3, objectName: 'Reactor Final Lockdown Terminal', reward: 'Escape', topic: 'REST API Methods (PUT vs POST vs PATCH) / Idempotency / HTTP Security', difficulty: 'Advanced', domain: 'Web APIs & Protocols', tags: ['rest-api', 'http-methods', 'idempotency', 'sector-3'] },
+  9: { level: 4, objectName: 'Corrupted Memory Shard', reward: 'Memory Bypass Key', topic: 'C/C++ Memory Allocation (malloc/free) / Pointers / Heap Corruption', difficulty: 'Advanced', domain: 'Low-Level & Memory', tags: ['c-cpp', 'pointers', 'memory-management', 'malloc', 'sector-4'] },
+  10: { level: 4, objectName: 'Deconstructed Debug Console', reward: 'Cipher Chip', topic: 'Binary Bitwise Shifts / Masks / Hex Registers', difficulty: 'Advanced', domain: 'Computer Architecture', tags: ['bitwise', 'binary', 'hex', 'registers', 'sector-4'] },
+  11: { level: 4, objectName: 'Anomaly Containment Gate', reward: 'Escape', topic: 'Race Conditions / Mutex Locks / Concurrency Synchronization', difficulty: 'Advanced', domain: 'Concurrency & Systems', tags: ['concurrency', 'race-conditions', 'mutex', 'threading', 'sector-4'] },
+  12: { level: 5, objectName: 'Quantum Synthesizer Core', reward: 'Singularity Prism', topic: 'Graph Traversal (BFS / DFS / Topological Sort) / Data Structures', difficulty: 'Advanced', domain: 'Data Structures & Algorithms', tags: ['graphs', 'bfs', 'dfs', 'data-structures', 'sector-5'] },
+  13: { level: 5, objectName: 'Gravity Inversion Hub', reward: 'Omni Core', topic: 'Dynamic Programming / Memoization / Big-O Time Complexity', difficulty: 'Advanced', domain: 'Algorithms & Complexity', tags: ['dynamic-programming', 'memoization', 'big-o', 'sector-5'] },
+  14: { level: 5, objectName: 'Final Gateway Extraction Portal', reward: 'Escape', topic: 'Zero-Knowledge Proofs / Cryptographic Key Exchange / Consensus Protocols', difficulty: 'Expert', domain: 'Advanced Cryptography', tags: ['zero-knowledge', 'zk-snark', 'cryptography', 'protocols', 'sector-5'] },
 };
 
 function sendJson(res, statusCode, data) {
@@ -179,10 +181,41 @@ const server = http.createServer(async (req, res) => {
   }
 
   // =========================================================================
+  // GENERATED QUESTIONS DATABASE ROUTES
+  // =========================================================================
+
+  // 8. List / Query Stored Questions: GET /api/questions
+  if (url.pathname === '/api/questions' && req.method === 'GET') {
+    const filters = {
+      domain: url.searchParams.get('domain') || undefined,
+      difficulty: url.searchParams.get('difficulty') || undefined,
+      sector_level: url.searchParams.get('sector_level') || undefined,
+      limit: url.searchParams.get('limit') || undefined,
+    };
+    const result = await handleGetQuestions(filters, process.env);
+    return sendJson(res, result.status, result);
+  }
+
+  // 9. Manually Store a Question: POST /api/questions
+  if (url.pathname === '/api/questions' && req.method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const auth = await authenticateUser(req, process.env);
+      if (auth.user) {
+        body.created_by = auth.user.id;
+      }
+      const result = await handleSaveQuestion(body, process.env);
+      return sendJson(res, result.status, result);
+    } catch (err) {
+      return sendJson(res, 500, { error: err.message });
+    }
+  }
+
+  // =========================================================================
   // AI PUZZLE GENERATION & EVALUATION ROUTES
   // =========================================================================
 
-  // 8. Generate Puzzle Endpoint
+  // 10. Generate Puzzle Endpoint: POST /api/ai/puzzle
   if (url.pathname === '/api/ai/puzzle' && req.method === 'POST') {
     try {
       const body = await parseBody(req);
@@ -202,6 +235,8 @@ const server = http.createServer(async (req, res) => {
 You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
 
+Domain: ${context.domain}
+Tags: ${context.tags.join(', ')}
 Topic: ${context.topic}
 Difficulty: ${context.difficulty}
 Expected Reward on Solve: "${context.reward}"
@@ -213,6 +248,7 @@ Requirements:
 4. "codeSnippet": A short, clean code snippet (in Python, JavaScript/TypeScript, SQL, or JSON) containing the bug or puzzle (or empty string if purely conceptual).
 5. "answer": Array of 2-8 acceptable string variations of the correct answer (case-insensitive, including shorthand, punctuation variations).
 6. "hint": A subtle, in-character cryptic clue.
+7. "explanation": 1-sentence technical explanation of why the solution works.
 
 Format your output strictly as a JSON object adhering to this schema:
 {
@@ -221,7 +257,8 @@ Format your output strictly as a JSON object adhering to this schema:
   "question": string,
   "codeSnippet": string,
   "answer": string[],
-  "hint": string
+  "hint": string,
+  "explanation": string
 }
 `;
 
@@ -265,6 +302,10 @@ Format your output strictly as a JSON object adhering to this schema:
       const validated = {
         id: puzzleId,
         level: context.level,
+        sector_level: context.level,
+        domain: context.domain,
+        tags: context.tags,
+        difficulty: context.difficulty,
         objectName: context.objectName,
         reward: context.reward,
         title: jsonResult.title || `Sector 0${context.level} Terminal Bypass`,
@@ -273,8 +314,11 @@ Format your output strictly as a JSON object adhering to this schema:
         codeSnippet: jsonResult.codeSnippet || '',
         answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer || '')],
         hint: jsonResult.hint || 'Inspect the terminal memory parameters carefully.',
-        explanation: 'Mainframe logic verified. Access granted.',
+        explanation: jsonResult.explanation || 'Mainframe logic verified. Access granted.',
       };
+
+      // Automatically archive generated question to database in background
+      handleSaveQuestion(validated, process.env).catch(() => {});
 
       return sendJson(res, 200, validated);
     } catch (err) {
@@ -282,7 +326,7 @@ Format your output strictly as a JSON object adhering to this schema:
     }
   }
 
-  // 9. Evaluate Puzzle Answer Endpoint
+  // 11. Evaluate Puzzle Answer Endpoint: POST /api/ai/evaluate
   if (url.pathname === '/api/ai/evaluate' && req.method === 'POST') {
     try {
       const body = await parseBody(req);
