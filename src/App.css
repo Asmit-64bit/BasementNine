@@ -1,184 +1,1390 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
+@charset "UTF-8";
 
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+/* ==========================================================================
+   LUTO // PSYCHOLOGICAL HORROR ENGINE
+   Visceral Horror Atmosphere, Flickering Shadows & Shrouded Dread
+   ========================================================================== */
+
+:root {
+  --luto-void: #020305;
+  --luto-abyss: #06070a;
+  --luto-surface: rgba(8, 10, 14, 0.92);
+  --luto-panel: rgba(12, 14, 20, 0.96);
+  --luto-glass: rgba(255, 255, 255, 0.03);
+  --luto-glass-hover: rgba(255, 255, 255, 0.07);
+  --luto-border: rgba(255, 255, 255, 0.08);
+  --luto-border-active: rgba(255, 255, 255, 0.25);
+  --luto-bone: #f1f3f6;
+  --luto-bone-dim: #94a3b8;
+  --luto-muted: #64748b;
+  --luto-blood: #b91c1c;
+  --luto-blood-bright: #ef4444;
+  --luto-blood-glow: rgba(185, 28, 28, 0.55);
+  --luto-amber: #d97706;
 }
 
-.hero {
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(185, 28, 28, 0.25) var(--luto-void);
+}
+
+::selection {
+  background: rgba(185, 28, 28, 0.4);
+  color: #fff;
+}
+
+/* Minimalist Horror Scrollbars */
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+::-webkit-scrollbar-track {
+  background: var(--luto-void);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(185, 28, 28, 0.3);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--luto-blood-bright);
+}
+
+body, html, #root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--luto-void);
+  color: var(--luto-bone);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.02em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   CINEMATIC HORROR ATMOSPHERE (BREATHING SHADOWS & GRAIN)
+   ========================================================================== */
+
+.luto-atmosphere {
   position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
+  isolation: isolate;
+  background: radial-gradient(circle at 65% 45%, #08090d 0%, var(--luto-void) 100%);
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
-#center {
+/* Scratched Film Noise Grain */
+.luto-atmosphere::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 0);
+  background-size: 3px 3px;
+  opacity: 0.4;
+  animation: film-jitter 0.2s steps(2) infinite;
+}
+
+@keyframes film-jitter {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(0.5px, -0.5px); }
+  100% { transform: translate(-0.5px, 0.5px); }
+}
+
+/* Living Breathing Radial Vignette */
+.luto-atmosphere::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(1, 2, 3, 0.96) 100%);
+  animation: horror-breathe 7s ease-in-out infinite alternate;
+}
+
+@keyframes horror-breathe {
+  0% { opacity: 0.9; transform: scale(1); }
+  50% { opacity: 0.98; transform: scale(1.03); }
+  100% { opacity: 0.92; transform: scale(0.99); }
+}
+
+/* ==========================================================================
+   THE SHROUDED DOORWAY & HAUNTING CORRIDOR
+   ========================================================================== */
+
+.luto-lore-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.luto-corridor-silhouette {
+  position: absolute;
+  right: 14%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 320px;
+  height: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: none;
+  background: linear-gradient(180deg, rgba(15, 18, 24, 0.5) 0%, rgba(2, 3, 5, 0.98) 100%);
+  box-shadow: 0 0 140px rgba(0, 0, 0, 0.95), inset 0 0 50px rgba(0, 0, 0, 0.95);
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  align-items: center;
+  justify-content: center;
+  animation: horror-light-flicker 9s infinite;
 }
 
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
+.luto-doorway-inner {
+  width: 72%;
+  height: 86%;
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  border-bottom: none;
+  background: radial-gradient(circle at 50% 75%, rgba(185, 28, 28, 0.12) 0%, rgba(0, 0, 0, 0.98) 75%);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.98);
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Sadako Yamamura (Ringu) Entity Styles - Completely Stable & Motionless */
+.luto-ghost-wrapper {
+  position: absolute;
+  bottom: 0;
+  width: 150px;
+  height: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  opacity: 0;
+  transform: none;
+  transition: opacity 0.8s ease-in-out;
+  pointer-events: none;
+}
+
+.luto-ghost-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  width: 90px;
+  height: 12px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.95) 0%, transparent 70%);
+  filter: blur(3px);
+}
+
+.luto-ghost-wrapper.manifested {
+  opacity: 0.95;
+  transform: none;
+  animation: none;
+}
+
+.luto-ghost-wrapper.jumpscare {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: drop-shadow(0 0 45px rgba(220, 38, 38, 0.95)) contrast(1.6);
+  animation: none !important;
+}
+
+.luto-sadako-png {
+  height: 100%;
+  max-height: 270px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.98)) drop-shadow(0 0 12px rgba(220, 38, 38, 0.35)) brightness(0.88) contrast(1.2);
+}
+
+.luto-jumpscare-sadako-img {
+  height: 92vmin;
+  max-width: 90vw;
+  object-fit: contain;
+  filter: contrast(1.8) brightness(0.92) drop-shadow(0 0 60px rgba(220, 38, 38, 0.85));
+  animation: face-screech 0.45s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+@keyframes jumpscare-shake {
+  0% { transform: translate(0, 0) scale(1); filter: invert(0); }
+  15% { transform: translate(-18px, 14px) scale(1.05); filter: invert(0.8) hue-rotate(180deg); }
+  30% { transform: translate(16px, -12px) scale(1.03); filter: invert(0); }
+  45% { transform: translate(-14px, -16px) scale(1.06); filter: invert(0.5); }
+  60% { transform: translate(12px, 10px) scale(1.02); filter: invert(0); }
+  75% { transform: translate(-8px, 6px) scale(1.04); }
+  100% { transform: translate(0, 0) scale(1); filter: invert(0); }
+}
+
+@keyframes face-screech {
+  0% { transform: scale(0.65) rotate(-3deg); opacity: 0; }
+  20% { transform: scale(1.15) rotate(2deg); opacity: 1; }
+  50% { transform: scale(1.08) rotate(-1deg); opacity: 1; }
+  100% { transform: scale(1.25) rotate(0deg); opacity: 0; }
+}
+
+.whisper-warning-toast {
+  position: fixed;
+  top: 3.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "Cinzel", serif;
+  font-size: 11px;
+  letter-spacing: 0.35em;
+  color: #ef4444;
+  background: rgba(8, 10, 14, 0.85);
+  padding: 4px 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  backdrop-filter: blur(12px);
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+  text-transform: uppercase;
+  z-index: 45;
+  pointer-events: none;
+  animation: whisper-twitch 0.3s steps(3) infinite;
+}
+
+@keyframes whisper-twitch {
+  0% { transform: translateX(-50%) skewX(0deg); }
+  50% { transform: translateX(-49%) skewX(-3deg); }
+  100% { transform: translateX(-51%) skewX(2deg); }
+}
+
+/* ==========================================================================
+   TITLE SCREEN ("THE LIMINAL VOID & LORE ARCHIVE")
+   ========================================================================== */
+
+.title-screen-container {
+  position: relative;
+  z-index: 10;
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3rem 4.5rem;
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+.title-top-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: var(--luto-muted);
+  text-transform: uppercase;
+  font-weight: 500;
+}
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
+.luto-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--luto-blood-bright);
+  box-shadow: 0 0 10px var(--luto-blood-glow);
+  animation: luto-pulse 2s ease-in-out infinite;
+}
+
+@keyframes luto-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.25; transform: scale(0.8); }
+}
+
+.title-hero-content {
+  max-width: 44rem;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.title-main-heading {
+  font-family: "Cinzel", "Inter", serif;
+  font-size: clamp(2.6rem, 5.5vw, 4.2rem);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--luto-bone);
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-shadow: 0 0 35px rgba(255, 255, 255, 0.08);
+}
+
+.title-lore-prologue {
+  margin-top: 1.5rem;
+  font-size: 0.92rem;
+  line-height: 1.85;
+  color: var(--luto-bone-dim);
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  border-left: 2px solid rgba(185, 28, 28, 0.5);
+  padding-left: 1.25rem;
+  background: rgba(185, 28, 28, 0.03);
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.title-sub-heading {
+  margin-top: 1rem;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--luto-muted);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+}
+
+.title-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 2.25rem;
+  max-width: 22rem;
+}
+
+.title-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.4rem;
+  background: var(--luto-glass);
+  border: 1px solid var(--luto-border);
+  border-radius: 4px;
+  color: var(--luto-bone-dim);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(16px);
+}
+
+.title-menu-btn:hover {
+  background: var(--luto-bone);
+  color: var(--luto-void);
+  border-color: var(--luto-bone);
+  transform: translateX(6px);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.25);
+}
+
+.title-menu-btn.primary-btn {
+  background: rgba(185, 28, 28, 0.12);
+  border-color: rgba(185, 28, 28, 0.4);
+  color: #fff;
+}
+
+.title-menu-btn.primary-btn:hover {
+  background: var(--luto-blood-bright);
+  color: #fff;
+  border-color: var(--luto-blood-bright);
+  box-shadow: 0 0 30px var(--luto-blood-glow);
+}
+
+.title-bottom-ticker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 1.25rem;
+  padding-right: 16rem;
+}
+
+/* ==========================================================================
+   LORE DOSSIER / PSYCHOLOGICAL CASE REPORT
+   ========================================================================== */
+
+.lore-dossier-modal {
+  width: 680px;
+  max-width: 95%;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(10, 12, 18, 0.98);
+  border: 1px solid rgba(185, 28, 28, 0.3);
+  border-radius: 6px;
+  padding: 2.25rem;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.98), 0 0 40px rgba(185, 28, 28, 0.1);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lore-section-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.redacted-bar {
+  background: #cbd5e1;
+  color: #cbd5e1;
+  padding: 0 4px;
+  border-radius: 2px;
+  user-select: none;
+}
+
+/* ==========================================================================
+   CHAPTER CAROUSEL ("THE HALL OF CHAPTERS")
+   ========================================================================== */
+
+.carousel-page-container {
+  position: relative;
+  z-index: 10;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem 3.5rem;
+  overflow: hidden;
+}
+
+.carousel-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.carousel-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--luto-glass);
+  border: 1px solid var(--luto-border);
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--luto-muted);
+  cursor: pointer;
+  font-family: inherit;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+
+.carousel-nav-link:hover {
+  color: #fff;
+  border-color: var(--luto-border-active);
+  background: var(--luto-glass-hover);
+}
+
+.carousel-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  max-width: 68rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.chapter-card-slide {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 2.5rem;
+  background: rgba(12, 14, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3rem;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 1px rgba(255, 255, 255, 0.15);
+  animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: scale(0.97) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.chapter-number-tag {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--luto-muted);
+  text-transform: uppercase;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.chapter-title {
+  font-family: "Cinzel", "Inter", serif;
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--luto-bone);
+  text-transform: uppercase;
+  margin: 0.5rem 0 1.25rem;
+  line-height: 1.2;
+}
+
+.chapter-synopsis {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--luto-bone-dim);
+  font-weight: 300;
+  margin-bottom: 1.5rem;
+}
+
+.chapter-quote-box {
+  padding: 1rem 1.25rem;
+  border-left: 2px solid rgba(185, 28, 28, 0.6);
+  background: rgba(185, 28, 28, 0.03);
+  font-size: 0.85rem;
+  color: var(--luto-bone-dim);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.chapter-right-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  padding-left: 2.5rem;
+}
+
+.chapter-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.chapter-meta-label {
+  color: var(--luto-muted);
+  text-transform: uppercase;
+}
+
+.chapter-meta-val {
+  color: var(--luto-bone);
+  font-weight: 500;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.chapter-action-btn {
+  margin-top: 2rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: var(--luto-bone);
+  color: var(--luto-void);
+  border: 1px solid var(--luto-bone);
+  border-radius: 4px;
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.25s ease;
+}
+
+.chapter-action-btn:hover:not(:disabled) {
+  background: #fff;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.chapter-action-btn:disabled {
+  background: transparent;
+  color: var(--luto-muted);
+  border-color: var(--luto-border);
+  cursor: not-allowed;
+}
+
+.carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding-top: 1rem;
+}
+
+.carousel-arrow-btn {
+  background: var(--luto-glass);
+  border: 1px solid var(--luto-border);
+  color: var(--luto-bone-dim);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(12px);
+}
+
+.carousel-arrow-btn:hover {
+  background: var(--luto-glass-hover);
+  color: #fff;
+  border-color: var(--luto-border-active);
+  transform: scale(1.05);
+}
+
+.carousel-dot-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.carousel-dot {
+  width: 24px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.carousel-dot.active {
+  background: var(--luto-bone);
+  width: 40px;
+}
+
+/* ==========================================================================
+   IN-GAME DIEGETIC HUD (LUTO PSYCHOLOGICAL DREAD)
+   ========================================================================== */
+
+.luto-hud-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.75rem 2.25rem;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* Dynamic Focus Reticle */
+.luto-focus-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.luto-reticle-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luto-reticle-dot.focused {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.3);
+  animation: reticle-pulse 2s infinite ease-in-out;
+}
+
+@keyframes reticle-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.luto-hover-whisper {
+  margin-top: 14px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--luto-bone);
+  background: rgba(10, 12, 18, 0.9);
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--luto-border);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+/* Bottom-Left Real-time EKG Cardiac Monitor */
+.luto-ekg-card {
+  position: absolute;
+  bottom: 2rem;
+  left: 2.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(10, 12, 18, 0.9);
+  border: 1px solid var(--luto-border);
+  padding: 8px 16px;
+  border-radius: 6px;
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+}
+
+.ekg-waveform-svg {
+  width: 60px;
+  height: 22px;
+}
+
+.ekg-line {
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation: ekg-draw 1.5s linear infinite;
+}
+
+@keyframes ekg-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.ekg-bpm-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--luto-bone);
+}
+
+/* Ghost Inventory Dock */
+.luto-inventory-dock {
+  position: absolute;
+  bottom: 2rem;
+  right: 2.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: auto;
+}
+
+.luto-inventory-pill {
+  background: rgba(10, 12, 18, 0.9);
+  border: 1px solid var(--luto-border);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--luto-bone-dim);
+  backdrop-filter: blur(16px);
+}
+
+/* Psychological Dossier (Puzzle Modal) */
+.luto-dossier-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 3, 5, 0.9);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  padding: 1.5rem;
+  pointer-events: auto;
+}
+
+.luto-dossier-modal {
+  width: 680px;
+  max-width: 95%;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(12, 14, 20, 0.98);
+  border: 1px solid var(--luto-border-active);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95);
+}
+
+.dossier-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--luto-border);
+  padding-bottom: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.dossier-title {
+  font-family: "Cinzel", "Inter", serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  color: var(--luto-bone);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.dossier-scenario {
+  font-size: 0.85rem;
+  line-height: 1.75;
+  color: var(--luto-muted);
+  font-weight: 300;
+  margin-bottom: 1.25rem;
+}
+
+.dossier-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--luto-border);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.95rem;
+  outline: none;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.dossier-input:focus {
+  border-color: var(--luto-bone);
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* ==========================================================================
+   LUTO SLEEK AUDIO CONTROLLER
+   ========================================================================== */
+
+.luto-audio-widget {
+  position: fixed;
+  bottom: 2.25rem;
+  right: 2.5rem;
+  z-index: 60;
+  font-family: inherit;
+  user-select: none;
+}
+
+.luto-audio-pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(12, 14, 20, 0.92);
+  border: 1px solid var(--luto-border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--luto-bone-dim);
+  cursor: pointer;
+  font-family: inherit;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+  transition: all 0.25s ease;
+}
+
+.luto-audio-pill-btn:hover {
+  background: rgba(22, 26, 36, 0.98);
+  border-color: var(--luto-border-active);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.9);
+}
+
+.luto-mini-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+  width: 10px;
+}
+
+.luto-mini-bar {
+  width: 2px;
+  background-color: var(--luto-bone);
+  border-radius: 1px;
+  transition: all 0.2s;
+}
+
+.luto-mini-bar.h3 { height: 10px; }
+.luto-mini-bar.h2 { height: 6px; }
+.luto-mini-bar.h35 { height: 12px; }
+.luto-mini-bar.h1 { height: 3px; opacity: 0.35; }
+
+.luto-audio-panel {
+  width: 18rem;
+  background: rgba(10, 12, 18, 0.98);
+  border: 1px solid var(--luto-border-active);
+  border-radius: 8px;
+  padding: 1.1rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luto-audio-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--luto-border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.luto-audio-title {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--luto-bone);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.luto-audio-close {
+  background: transparent;
+  border: none;
+  color: var(--luto-muted);
+  cursor: pointer;
+  padding: 2px;
+  transition: color 0.2s ease;
+}
+
+.luto-audio-close:hover {
+  color: #fff;
+}
+
+.luto-audio-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
+.luto-audio-eq-track {
+  margin-bottom: 0.85rem;
+  display: flex;
+  height: 1.1rem;
+  align-items: flex-end;
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--luto-border);
+  border-radius: 3px;
+}
+
+.luto-eq-bar {
+  flex: 1;
+  background-color: var(--luto-bone);
+  border-radius: 1px;
+  transition: all 0.15s ease;
+}
+
+.luto-audio-slider {
+  height: 4px;
+  width: 100%;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  accent-color: var(--luto-bone);
+  outline: none;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   HORROR PROLOGUE NARRATION SEQUENCE
+   ========================================================================== */
+.horror-prologue-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #040406;
+  color: #f1f2f6;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem 4rem;
+  z-index: 9999;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.prologue-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(20, 4, 8, 0.2) 0%, rgba(3, 3, 5, 0.95) 75%, #020203 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.prologue-scanlines {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  opacity: 0.7;
+  z-index: 2;
+}
+
+.prologue-dust {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+  pointer-events: none;
+  opacity: 0.3;
+  z-index: 1;
+}
+
+/* Door Slam Violent Shake */
+.door-slam-shake {
+  animation: violentDoorShake 0.75s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes violentDoorShake {
+  10%, 90% { transform: translate3d(-3px, 4px, 0) rotate(-0.5deg); }
+  20%, 80% { transform: translate3d(5px, -4px, 0) rotate(0.6deg); }
+  30%, 50%, 70% { transform: translate3d(-7px, 6px, 0) rotate(-0.8deg); filter: contrast(1.8) hue-rotate(15deg); }
+  40%, 60% { transform: translate3d(8px, -6px, 0) rotate(0.9deg); }
+}
+
+.door-slam-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(220, 20, 40, 0.6) 0%, rgba(139, 0, 20, 0.85) 100%);
+  mix-blend-mode: screen;
+  animation: slamFlashFade 0.8s ease-out forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes slamFlashFade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.prologue-ghost-flash {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 12;
+  pointer-events: none;
+  animation: ghostFlicker 0.25s steps(2) forwards;
+}
+
+.ghost-flash-img {
+  max-height: 80vh;
+  object-fit: contain;
+  filter: contrast(2.5) drop-shadow(0 0 40px #dc2626);
+}
+
+@keyframes ghostFlicker {
+  0% { opacity: 0; filter: invert(1); }
+  30% { opacity: 1; filter: invert(0); }
+  60% { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+/* Header */
+.prologue-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+}
+
+.prologue-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: #717789;
+  text-transform: uppercase;
+}
+
+.pulse-red-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #dc2626;
+  box-shadow: 0 0 8px #dc2626;
+  animation: ledPulse 1.8s infinite;
+}
+
+.pulse-red-led.rapid {
+  animation: ledPulse 0.4s infinite;
+}
+
+.prologue-skip-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(20, 21, 28, 0.6);
+  border: 1px solid rgba(70, 75, 90, 0.4);
+  color: #8b92a2;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prologue-skip-btn:hover {
+  border-color: #dc2626;
+  color: #fff;
+  background: rgba(50, 10, 20, 0.5);
+}
+
+/* Center Stage */
+.prologue-center-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.prologue-start-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.2rem;
+}
+
+.prompt-audio-icon {
+  animation: audioBreath 2s infinite ease-in-out;
+}
+
+@keyframes audioBreath {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 15px rgba(220, 38, 38, 0.6)); }
+}
+
+.prompt-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  letter-spacing: 0.25em;
+  color: #f1f2f6;
+  margin: 0;
+}
+
+.prompt-desc {
+  font-family: var(--font-sans, sans-serif);
+  color: #7b8294;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.prologue-enter-btn {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(90deg, #380a14 0%, #1c050a 100%);
+  border: 1px solid #701625;
+  color: #f5f5f7;
+  padding: 1rem 2.2rem;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  box-shadow: 0 6px 25px rgba(112, 22, 37, 0.4);
+  transition: all 0.25s ease;
+}
+
+.prologue-enter-btn:hover {
+  background: linear-gradient(90deg, #52101e 0%, #29070f 100%);
+  border-color: #a82339;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(168, 35, 57, 0.55);
+}
+
+/* Narration Flow */
+.narration-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+}
+
+.narration-history {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-line {
+  font-family: 'Cinzel', serif;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  color: #555b6c;
+  margin: 0;
+  transition: color 0.5s ease;
+}
+
+.history-line.door-line {
+  color: #82414c;
+}
+
+.narration-active-box {
+  min-height: 110px;
+}
+
+.active-line {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.4rem, 2.5vw, 2.1rem);
+  line-height: 1.55;
+  letter-spacing: 0.08em;
+  color: #f4f5f8;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
+}
+
+.active-line.door-locked-emphasis {
+  color: #ef4444;
+  text-shadow: 0 0 25px rgba(239, 68, 68, 0.7);
+  letter-spacing: 0.12em;
+}
+
+.active-line.machine-running-emphasis {
+  color: #f87171;
+  text-shadow: 0 0 30px rgba(248, 113, 113, 0.6);
+}
+
+.cursor-caret {
+  color: #dc2626;
+  margin-left: 4px;
+  animation: blinkCaret 0.8s infinite;
+}
+
+@keyframes blinkCaret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.prologue-alert-tag {
+  margin-top: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(45, 10, 18, 0.65);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  color: #f87171;
+  animation: alertPulse 2s infinite ease-in-out;
+  align-self: flex-start;
+}
+
+@keyframes alertPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; box-shadow: 0 0 15px rgba(220, 38, 38, 0.3); }
+}
+
+.prologue-finish-actions {
+  margin-top: 2.5rem;
+  display: flex;
+  justify-content: flex-start;
+  animation: finishFadeIn 0.8s ease-out forwards;
+}
+
+@keyframes finishFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.prologue-enter-abyss-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(90deg, #420a16 0%, #20040a 100%);
+  border: 1px solid #8e1a2f;
+  color: #fff;
+  padding: 1rem 2.4rem;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.88rem;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(142, 26, 47, 0.5);
+  transition: all 0.25s ease;
+}
+
+.prologue-enter-abyss-btn:hover {
+  background: linear-gradient(90deg, #5c1020 0%, #2e0610 100%);
+  border-color: #c72442;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(199, 36, 66, 0.7);
+}
+
+/* Bottom Telemetry */
+.prologue-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: #63697a;
+  position: relative;
+  z-index: 10;
+  border-top: 1px solid rgba(45, 48, 62, 0.3);
+  padding-top: 1rem;
+}
+
+.biometric-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.heart-icon {
+  color: #dc2626;
+  animation: heartThrob 0.6s infinite ease-in-out;
+}
+
+@keyframes heartThrob {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+
+.status-normal {
+  color: #818798;
+}
+
+.status-critical {
+  color: #ef4444;
+  font-weight: bold;
+  animation: criticalFlicker 1.5s infinite;
+}
+
+@keyframes criticalFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.prologue-hint {
+  color: #4a5061;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
 }
