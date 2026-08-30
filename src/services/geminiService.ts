@@ -1,6 +1,7 @@
 import type { Puzzle } from '../data/puzzles';
 import { puzzles as defaultPuzzles } from '../data/puzzles';
 import { apiClient } from '../lib/apiClient';
+import { DOMAIN_KNOWLEDGE_BASES } from '../data/knowledgeBases';
 
 export interface PuzzleContext {
   id: number;
@@ -204,6 +205,7 @@ export async function generateGeminiPuzzle(
   const store = useGameStore.getState();
   const domain = store.selectedDomain || 'General Programming';
   const finalDifficulty = difficulty || store.currentDifficulty || 'Beginner';
+  const knowledgeBase = DOMAIN_KNOWLEDGE_BASES[domain] || '';
 
   // 1. First try calling our secure backend server
   try {
@@ -215,7 +217,7 @@ export async function generateGeminiPuzzle(
     const backendRes = await fetch('/api/ai/puzzle', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ puzzleId, domain, difficulty: finalDifficulty }),
+      body: JSON.stringify({ puzzleId, domain, difficulty: finalDifficulty, knowledgeBase }),
       signal: AbortSignal.timeout(15000),
     });
 
