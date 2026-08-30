@@ -2,6 +2,15 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  handleSignUp,
+  handleSignIn,
+  handleGetProfile,
+  handleSyncProfile,
+  handleResetProfile,
+  authenticateUser,
+  getSupabaseAdmin,
+} from './supabaseService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,7 +61,7 @@ function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, x-goog-api-key, Authorization',
   });
   res.end(JSON.stringify(data));
@@ -78,7 +87,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, x-goog-api-key, Authorization',
     });
     res.end();
@@ -89,14 +98,91 @@ const server = http.createServer(async (req, res) => {
 
   // 1. Health Check
   if (url.pathname === '/api/health' && req.method === 'GET') {
+    const supabaseAdmin = getSupabaseAdmin(process.env);
     return sendJson(res, 200, {
       status: 'ok',
-      service: "Schrodinger's Abyss Backend API",
+      service: "Basement Nine Backend API",
       aiConfigured: Boolean(GEMINI_API_KEY),
+      databaseConfigured: Boolean(supabaseAdmin),
     });
   }
 
-  // 2. Generate Puzzle Endpoint
+  // =========================================================================
+  // SUPABASE BACKEND AUTH & USER DATABASE ROUTES
+  // =========================================================================
+
+  // 2. Auth Sign Up: POST /api/auth/signup
+  if (url.pathname === '/api/auth/signup' && req.method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const result = await handleSignUp(body, process.env);
+      return sendJson(res, result.status, result);
+    } catch (err) {
+      return sendJson(res, 500, { error: err.message });
+    }
+  }
+
+  // 3. Auth Sign In: POST /api/auth/signin
+  if (url.pathname === '/api/auth/signin' && req.method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      const result = await handleSignIn(body, process.env);
+      return sendJson(res, result.status, result);
+    } catch (err) {
+      return sendJson(res, 500, { error: err.message });
+    }
+  }
+
+  // 4. Auth Session & Current User: GET /api/auth/session
+  if (url.pathname === '/api/auth/session' && req.method === 'GET') {
+    const { user, error } = await authenticateUser(req, process.env);
+    if (error || !user) {
+      return sendJson(res, 401, { user: null, profile: null, error });
+    }
+    const profileRes = await handleGetProfile(user, process.env);
+    return sendJson(res, 200, { user, profile: profileRes.profile });
+  }
+
+  // 5. Get User Profile: GET /api/profile
+  if (url.pathname === '/api/profile' && req.method === 'GET') {
+    const { user, error } = await authenticateUser(req, process.env);
+    if (error || !user) {
+      return sendJson(res, 401, { error: error || 'Unauthorized' });
+    }
+    const result = await handleGetProfile(user, process.env);
+    return sendJson(res, result.status, result);
+  }
+
+  // 6. Sync / Upsert User Profile & Progress: POST /api/profile/sync
+  if (url.pathname === '/api/profile/sync' && req.method === 'POST') {
+    const { user, error } = await authenticateUser(req, process.env);
+    if (error || !user) {
+      return sendJson(res, 401, { error: error || 'Unauthorized' });
+    }
+    try {
+      const body = await parseBody(req);
+      const result = await handleSyncProfile(user, body, process.env);
+      return sendJson(res, result.status, result);
+    } catch (err) {
+      return sendJson(res, 500, { error: err.message });
+    }
+  }
+
+  // 7. Reset User Profile: POST /api/profile/reset
+  if (url.pathname === '/api/profile/reset' && req.method === 'POST') {
+    const { user, error } = await authenticateUser(req, process.env);
+    if (error || !user) {
+      return sendJson(res, 401, { error: error || 'Unauthorized' });
+    }
+    const result = await handleResetProfile(user, process.env);
+    return sendJson(res, result.status, result);
+  }
+
+  // =========================================================================
+  // AI PUZZLE GENERATION & EVALUATION ROUTES
+  // =========================================================================
+
+  // 8. Generate Puzzle Endpoint
   if (url.pathname === '/api/ai/puzzle' && req.method === 'POST') {
     try {
       const body = await parseBody(req);
@@ -139,15 +225,10 @@ Format your output strictly as a JSON object adhering to this schema:
 }
 `;
 
-      const modelsToTry = [
-        process.env.VITE_GEMINI_MODEL || 'gemini-3.6-flash',
-        'gemini-3.6-flash',
-        'gemini-3.5-flash',
-        'gemini-2.5-flash',
-      ];
+      const models = [process.env.VITE_GEMINI_MODEL || 'gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
       let jsonResult = null;
 
-      for (const m of modelsToTry) {
+      for (const m of models) {
         try {
           const geminiRes = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
@@ -159,84 +240,70 @@ Format your output strictly as a JSON object adhering to this schema:
               },
               body: JSON.stringify({
                 contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: {
-                  responseMimeType: 'application/json',
-                  temperature: 0.8,
-                },
+                generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
               }),
             }
           );
 
-          if (!geminiRes.ok) continue;
-
-          const data = await geminiRes.json();
-          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            jsonResult = JSON.parse(rawText);
-            break;
+          if (geminiRes.ok) {
+            const data = await geminiRes.json();
+            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              jsonResult = JSON.parse(rawText);
+              break;
+            }
           }
         } catch {
           // try next model
         }
       }
 
-      if (!jsonResult || !jsonResult.question || !jsonResult.answer) {
-        return sendJson(res, 502, { error: 'Gemini did not return a valid puzzle structure' });
+      if (!jsonResult) {
+        return sendJson(res, 502, { error: 'Gemini API failed to generate valid puzzle JSON' });
       }
 
-      return sendJson(res, 200, {
-        puzzle: {
-          id: puzzleId,
-          level: context.level,
-          title: jsonResult.title,
-          scenario: jsonResult.scenario,
-          question: jsonResult.question,
-          codeSnippet: jsonResult.codeSnippet ?? '',
-          answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer)],
-          reward: context.reward,
-        },
-      });
-    } catch {
-      return sendJson(res, 500, { error: 'Internal server error generating puzzle' });
+      const validated = {
+        id: puzzleId,
+        level: context.level,
+        objectName: context.objectName,
+        reward: context.reward,
+        title: jsonResult.title || `Sector 0${context.level} Terminal Bypass`,
+        scenario: jsonResult.scenario || 'The terminal screen flickers violently with corrupted machine code.',
+        question: jsonResult.question || 'Provide the bypass token or fix the highlighted code error.',
+        codeSnippet: jsonResult.codeSnippet || '',
+        answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer || '')],
+        hint: jsonResult.hint || 'Inspect the terminal memory parameters carefully.',
+        explanation: 'Mainframe logic verified. Access granted.',
+      };
+
+      return sendJson(res, 200, validated);
+    } catch (err) {
+      return sendJson(res, 500, { error: err.message || 'Internal Server Error' });
     }
   }
 
-  // 3. Evaluate Answer Endpoint
+  // 9. Evaluate Puzzle Answer Endpoint
   if (url.pathname === '/api/ai/evaluate' && req.method === 'POST') {
     try {
       const body = await parseBody(req);
-      const { puzzle, userAnswer } = body;
       const clientKey = req.headers['x-goog-api-key'] || body.customApiKey;
       const apiKey = clientKey || GEMINI_API_KEY;
 
-      if (!userAnswer || !puzzle) {
-        return sendJson(res, 400, { error: 'Missing puzzle or userAnswer' });
-      }
-
-      const trimmed = String(userAnswer).trim().toLowerCase();
-
-      // Check direct local match first
-      const isDirectMatch = Array.isArray(puzzle.answer) && puzzle.answer.some(
-        (ans) => String(ans).trim().toLowerCase() === trimmed
-      );
-
-      if (isDirectMatch) {
-        return sendJson(res, 200, { isCorrect: true, feedback: 'ACCESS GRANTED.' });
-      }
-
       if (!apiKey) {
-        return sendJson(res, 200, { isCorrect: false, feedback: 'Incorrect answer. Try again.' });
+        return sendJson(res, 400, { error: 'No Gemini API key available.' });
       }
+
+      const { question, codeSnippet, expectedAnswers, playerAnswer } = body;
 
       const evalPrompt = `
-You are a strict but fair judge for a technical coding puzzle game.
-Question: "${puzzle.question}"
-Reference Code: "${puzzle.codeSnippet || 'None'}"
-Expected Reference Answers: ${JSON.stringify(puzzle.answer || [])}
-Player's Submission: "${userAnswer}"
+You are the AI arbiter of an escape room. Evaluate if the player's answer is correct for the following puzzle.
+Question: "${question}"
+Code: "${codeSnippet || ''}"
+Known Valid Answers: ${JSON.stringify(expectedAnswers || [])}
+Player's Answer: "${playerAnswer}"
 
-Determine if the player's submission is a valid, correct solution/answer to the question.
-Format your output strictly as a JSON object:
+Is the player's answer semantically correct or equivalent?
+Output strictly a JSON object:
 {
   "isCorrect": boolean,
   "feedback": "Short in-character 1-sentence explanation"
@@ -288,5 +355,6 @@ Format your output strictly as a JSON object:
 
 server.listen(PORT, () => {
   console.log(`[ABYSS BACKEND] Secure API server listening on http://localhost:${PORT}`);
-  console.log(`[ABYSS BACKEND] Gemini AI Status: ${GEMINI_API_KEY ? 'ACTIVE (Server Key Configured)' : 'STANDBY (Client/Curated Mode)'}`);
+  console.log(`[ABYSS BACKEND] Gemini AI Status: ${GEMINI_API_KEY ? 'ACTIVE' : 'STANDBY'}`);
+  console.log(`[ABYSS BACKEND] Supabase Database: ${getSupabaseAdmin(process.env) ? 'CONNECTED' : 'STANDBY'}`);
 });
