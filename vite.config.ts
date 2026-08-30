@@ -49,7 +49,7 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               const domain = data.domain || context.domain || 'Programming Fundamentals';
               const difficulty = data.difficulty || context.difficulty || 'Easy';
 
-              const prompt = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
+              const prompt = `You are the corrupted sentient core of a paranormal facility called "Basement Nine".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
 Domain Focus: ${domain}
 Difficulty Level: ${difficulty}
