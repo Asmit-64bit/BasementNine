@@ -356,7 +356,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ onClose }) =
 
             <div className="profile-meta-tags">
               <span className="profile-tag">
-                <Fingerprint size={11} /> ID: {user ? user.email : '#OP-889-ABYSS'}
+                <Fingerprint size={11} /> ID: {user ? user.email : '#OP-889-B9'}
               </span>
               <span className="profile-tag">
                 <Heart size={11} color="#ef4444" className="profile-heart-pulse-icon" /> PULSE:{' '}
@@ -665,7 +665,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ onClose }) =
 
                       <div className="profile-sector-details">
                         <div className="profile-sector-name">
-                          SECTOR 0{lvl} // {lvl === 1 ? 'BULKHEAD ENTRANCE' : lvl === 2 ? 'CORE LOGIC CORRIDOR' : lvl === 3 ? 'STORAGE VAULT' : lvl === 4 ? 'FACILITY SUB-BASEMENT' : 'ABYSS ZERO MATRIX'}
+                          SECTOR 0{lvl} // {lvl === 1 ? 'BULKHEAD ENTRANCE' : lvl === 2 ? 'CORE LOGIC CORRIDOR' : lvl === 3 ? 'STORAGE VAULT' : lvl === 4 ? 'FACILITY SUB-BASEMENT' : 'BASEMENT NINE ZERO MATRIX'}
                         </div>
                         <div className="profile-sector-depth">DEPTH: -{lvl * 80}m BELOW SURFACE // PRESSURE CRITICAL</div>
                       </div>

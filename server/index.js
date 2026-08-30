@@ -199,7 +199,7 @@ const server = http.createServer(async (req, res) => {
       const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
 
       const prompt = `
-You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
+You are the corrupted sentient core of a paranormal facility called "Basement Nine".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
 
 Topic: ${context.topic}
@@ -354,7 +354,7 @@ Output strictly a JSON object:
 });
 
 server.listen(PORT, () => {
-  console.log(`[ABYSS BACKEND] Secure API server listening on http://localhost:${PORT}`);
-  console.log(`[ABYSS BACKEND] Gemini AI Status: ${GEMINI_API_KEY ? 'ACTIVE' : 'STANDBY'}`);
-  console.log(`[ABYSS BACKEND] Supabase Database: ${getSupabaseAdmin(process.env) ? 'CONNECTED' : 'STANDBY'}`);
+  console.log(`[BASEMENT NINE BACKEND] Secure API server listening on http://localhost:${PORT}`);
+  console.log(`[BASEMENT NINE BACKEND] Gemini AI Status: ${GEMINI_API_KEY ? 'ACTIVE' : 'STANDBY'}`);
+  console.log(`[BASEMENT NINE BACKEND] Supabase Database: ${getSupabaseAdmin(process.env) ? 'CONNECTED' : 'STANDBY'}`);
 });

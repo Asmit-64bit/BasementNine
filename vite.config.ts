@@ -38,7 +38,7 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               }
 
               const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
-              const prompt = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
+              const prompt = `You are the corrupted sentient core of a paranormal facility called "Basement Nine".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
 Topic: ${context.topic}
 Difficulty: ${context.difficulty}
