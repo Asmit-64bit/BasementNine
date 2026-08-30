@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Puzzle } from '../data/puzzles';
 import { puzzles as defaultPuzzles } from '../data/puzzles';
+import { domainSpecificPuzzles } from '../data/domainPuzzles';
 import { TOTAL_LEVELS } from '../data/levels';
 import { ACHIEVEMENTS, type Achievement } from '../data/achievements';
 import { playAchievementJingle, playFlashlightToggle } from '../utils/soundEffects';
@@ -251,6 +252,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   getPuzzle: (id: number) => {
     const dynamic = get().dynamicPuzzles[id];
     if (dynamic) return dynamic;
+    const domain = get().selectedDomain;
+    if (domain && domainSpecificPuzzles[domain] && domainSpecificPuzzles[domain][id]) {
+      return domainSpecificPuzzles[domain][id];
+    }
     return defaultPuzzles.find((p) => p.id === id);
   },
 
