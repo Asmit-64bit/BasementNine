@@ -46,6 +46,8 @@ Domain Focus: ${domain}
 Difficulty Level: ${difficulty}
 Expected Reward on Solve: "${context.reward}"
 
+CRITICAL INSTRUCTION: You MUST strictly restrict the scenario, puzzle logic, question, and code snippet entirely to the Domain Focus ('${domain}'). Do not include concepts outside of this domain.
+
 Format your output strictly as a JSON object adhering to this schema:
 {
   "title": string,
@@ -57,29 +59,28 @@ Format your output strictly as a JSON object adhering to this schema:
   "nextClue": "a cryptic lore clue pointing to the next puzzle"
 }`;
 
-              const models = [env.VITE_GEMINI_MODEL || 'gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+              const model = env.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
               let jsonResult: any = null;
 
-              for (const m of models) {
-                try {
-                  const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
-                    body: JSON.stringify({
-                      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                      generationConfig: { responseMimeType: 'application/json', temperature: 0.8 },
-                    }),
-                  });
-                  if (!gRes.ok) continue;
+              try {
+                const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
+                  body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+                  }),
+                });
+                
+                if (gRes.ok) {
                   const gData = await gRes.json();
                   const raw = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
                   if (raw) {
                     jsonResult = JSON.parse(raw);
-                    break;
                   }
-                } catch {
-                  // try next
                 }
+              } catch (e) {
+                console.error("Gemini API Error:", e);
               }
 
               if (!jsonResult || !jsonResult.question || !jsonResult.answer) {
@@ -155,35 +156,33 @@ Format your output strictly as a JSON object:
   "nextDifficulty": "Beginner, Intermediate, Advanced, or Expert"
 }`;
 
-              const models = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
-              for (const m of models) {
-                try {
-                  const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
-                    body: JSON.stringify({
-                      contents: [{ role: 'user', parts: [{ text: evalPrompt }] }],
-                      generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-                    }),
-                  });
-                  if (gRes.ok) {
-                    const gData = await gRes.json();
-                    const raw = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (raw) {
-                      const evalRes = JSON.parse(raw);
-                      res.writeHead(200, { 'Content-Type': 'application/json' });
-                      return res.end(
-                        JSON.stringify({
-                          isCorrect: Boolean(evalRes.isCorrect),
-                          feedback: evalRes.feedback || (evalRes.isCorrect ? 'Correct!' : 'Incorrect.'),
-                          nextDifficulty: evalRes.nextDifficulty
-                        })
-                      );
-                    }
+              const model = env.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
+              try {
+                const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
+                  body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: evalPrompt }] }],
+                    generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
+                  }),
+                });
+                if (gRes.ok) {
+                  const gData = await gRes.json();
+                  const raw = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (raw) {
+                    const evalRes = JSON.parse(raw);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    return res.end(
+                      JSON.stringify({
+                        isCorrect: Boolean(evalRes.isCorrect),
+                        feedback: evalRes.feedback || (evalRes.isCorrect ? 'Correct!' : 'Incorrect.'),
+                        nextDifficulty: evalRes.nextDifficulty
+                      })
+                    );
                   }
-                } catch {
-                  // try next
                 }
+              } catch (e) {
+                console.error("Gemini API Eval Error:", e);
               }
 
               res.writeHead(200, { 'Content-Type': 'application/json' });
