@@ -187,16 +187,23 @@ export function clearStoredGeminiApiKey() {
   }
 }
 
+import { useGameStore } from '../store/gameStore';
+
 /**
  * Generate an atmospheric coding escape room puzzle using Backend API or direct Gemini.
  */
 export async function generateGeminiPuzzle(
   puzzleId: number,
+  difficulty?: string,
   customApiKey?: string
 ): Promise<Puzzle> {
   const context = PUZZLE_SLOTS[puzzleId];
   const defaultFallback = defaultPuzzles.find((p) => p.id === puzzleId) || defaultPuzzles[0];
   const apiKey = customApiKey || getGeminiApiKey();
+
+  const store = useGameStore.getState();
+  const domain = store.selectedDomain || 'General Programming';
+  const finalDifficulty = difficulty || store.currentDifficulty || 'Beginner';
 
   // 1. First try calling our secure backend server
   try {
@@ -208,7 +215,7 @@ export async function generateGeminiPuzzle(
     const backendRes = await fetch('/api/ai/puzzle', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ puzzleId }),
+      body: JSON.stringify({ puzzleId, domain, difficulty: finalDifficulty }),
     });
 
     if (backendRes.ok) {
@@ -354,16 +361,18 @@ Format your output strictly as a JSON object adhering to this schema:
 export async function evaluateAnswerWithGemini(
   puzzle: Puzzle,
   userAnswer: string,
+  solveTimeMs?: number,
+  currentDifficulty?: string,
   customApiKey?: string
-): Promise<{ isCorrect: boolean; feedback?: string }> {
-  const trimmed = userAnswer.trim().toLowerCase();
-  if (!trimmed) return { isCorrect: false, feedback: 'Input cannot be empty.' };
-
-  // 1. Direct local matching against acceptable answers
-  const isDirectMatch = puzzle.answer.some(
-    (ans) => ans.trim().toLowerCase() === trimmed
+): Promise<{ isCorrect: boolean; feedback?: string; nextDifficulty?: string }> {
+  // 1. Try static direct matching first
+  const staticAnswers = Array.isArray(puzzle.answer) ? puzzle.answer : [String(puzzle.answer)];
+  const isDirectMatch = staticAnswers.some(
+    (a) => a.trim().toLowerCase() === userAnswer.trim().toLowerCase()
   );
-  if (isDirectMatch) {
+
+  if (isDirectMatch && !solveTimeMs) {
+    // Basic match without evaluation capability
     return { isCorrect: true };
   }
 
@@ -379,7 +388,7 @@ export async function evaluateAnswerWithGemini(
     const backendRes = await fetch('/api/ai/evaluate', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ puzzle, userAnswer }),
+      body: JSON.stringify({ puzzle, userAnswer, solveTimeMs, currentDifficulty }),
     });
 
     if (backendRes.ok) {
@@ -388,6 +397,7 @@ export async function evaluateAnswerWithGemini(
         return {
           isCorrect: data.isCorrect,
           feedback: data.feedback || (data.isCorrect ? 'ACCESS GRANTED.' : 'Incorrect.'),
+          nextDifficulty: data.nextDifficulty
         };
       }
     }

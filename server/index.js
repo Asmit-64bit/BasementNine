@@ -245,18 +245,20 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await parseBody(req);
       const puzzleId = Number(body.puzzleId) || 1;
+      const adaptiveDifficulty = body.difficulty;
       const clientKey = req.headers['x-goog-api-key'] || body.customApiKey;
 
       const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
+      const finalDifficulty = adaptiveDifficulty || context.difficulty;
 
       const prompt = `
-You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
+You are the corrupted sentient core of a paranormal facility called "Basement Nine".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
 
 Domain: ${context.domain}
 Tags: ${context.tags.join(', ')}
 Topic: ${context.topic}
-Difficulty: ${context.difficulty}
+Difficulty: ${finalDifficulty}
 Expected Reward on Solve: "${context.reward}"
 
 Requirements:

@@ -46,11 +46,16 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               const clientKey = req.headers['x-goog-api-key'] || data.customApiKey;
 
               const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
+              const domain = data.domain || context.domain || 'Programming Fundamentals';
+              const difficulty = data.difficulty || context.difficulty || 'Easy';
+
               const prompt = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
-Topic: ${context.topic}
-Difficulty: ${context.difficulty}
+Domain Focus: ${domain}
+Difficulty Level: ${difficulty}
 Expected Reward on Solve: "${context.reward}"
+
+CRITICAL INSTRUCTION: You MUST strictly restrict the scenario, puzzle logic, question, and code snippet entirely to the Domain Focus ('${domain}'). Do not include concepts outside of this domain.
 
 Format your output strictly as a JSON object adhering to this schema:
 {
@@ -104,7 +109,7 @@ Format your output strictly as a JSON object adhering to this schema:
                     } catch (err: any) {
                       lastErr = err;
                       if (err.status === 429 || err.status === 402 || err.status === 403) {
-                        throw err; // Trigger key rotation to next key
+                        throw err; // Trigger key rotation
                       }
                     }
                   }
@@ -121,9 +126,9 @@ Format your output strictly as a JSON object adhering to this schema:
                 handleSaveQuestion(
                   {
                     question: jsonResult.question,
-                    domain: context.domain,
+                    domain: domain,
                     tags: context.tags,
-                    difficulty: context.difficulty,
+                    difficulty: difficulty,
                     title: jsonResult.title,
                     scenario: jsonResult.scenario,
                     code_snippet: jsonResult.codeSnippet ?? '',
@@ -170,7 +175,7 @@ Format your output strictly as a JSON object adhering to this schema:
           req.on('end', async () => {
             try {
               const data = body ? JSON.parse(body) : {};
-              const { puzzle, userAnswer } = data;
+              const { puzzle, userAnswer, solveTimeMs, currentDifficulty } = data;
               const clientKey = req.headers['x-goog-api-key'] || data.customApiKey;
 
               if (!userAnswer || !puzzle) {
@@ -193,12 +198,14 @@ Question: "${puzzle.question}"
 Reference Code: "${puzzle.codeSnippet || 'None'}"
 Expected Reference Answers: ${JSON.stringify(puzzle.answer || [])}
 Player's Submission: "${userAnswer}"
+${solveTimeMs ? `The player solved this puzzle in ${Math.round(solveTimeMs / 1000)} seconds. Current Difficulty: ${currentDifficulty || 'Easy'}. Based on this time (if they solved it very quickly under 30s, increase difficulty. If over 120s, decrease it. Otherwise keep it same).` : ''}
 
 Determine if the player's submission is a valid, correct solution/answer to the question.
 Format your output strictly as a JSON object:
 {
   "isCorrect": boolean,
-  "feedback": "Short in-character 1-sentence explanation"
+  "feedback": "Short in-character 1-sentence explanation",
+  "nextDifficulty": "Easy, Intermediate, Advanced, or Expert"
 }`;
 
               const { executeGeminiWithRotation } = await import('./server/geminiKeyPool.js');
@@ -253,6 +260,7 @@ Format your output strictly as a JSON object:
                 JSON.stringify({
                   isCorrect: Boolean(evalRes.isCorrect),
                   feedback: evalRes.feedback || (evalRes.isCorrect ? 'Correct!' : 'Incorrect.'),
+                  nextDifficulty: evalRes.nextDifficulty,
                 })
               );
             } catch {
@@ -273,12 +281,12 @@ Format your output strictly as a JSON object:
             try {
               const { handleSignUp } = await import('./server/supabaseService.js');
               const data = body ? JSON.parse(body) : {};
-              const result = await handleSignUp(data, env);
+              const result = await handleSignUp(data.email, data.password, data.operatorName, env);
               res.writeHead(result.status, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify(result));
+              return res.end(JSON.stringify(result));
             } catch (e: any) {
               res.writeHead(500, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: e?.message || 'Sign up error' }));
+              return res.end(JSON.stringify({ error: e?.message || 'Server error' }));
             }
           });
           return;
@@ -292,19 +300,19 @@ Format your output strictly as a JSON object:
             try {
               const { handleSignIn } = await import('./server/supabaseService.js');
               const data = body ? JSON.parse(body) : {};
-              const result = await handleSignIn(data, env);
+              const result = await handleSignIn(data.email, data.password, env);
               res.writeHead(result.status, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify(result));
+              return res.end(JSON.stringify(result));
             } catch (e: any) {
               res.writeHead(500, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: e?.message || 'Sign in error' }));
+              return res.end(JSON.stringify({ error: e?.message || 'Server error' }));
             }
           });
           return;
         }
 
-        // GET /api/auth/session
-        if (req.method === 'GET' && req.url === '/api/auth/session') {
+        // GET /api/auth/me
+        if (req.method === 'GET' && req.url === '/api/auth/me') {
           try {
             const { authenticateUser, handleGetProfile } = await import('./server/supabaseService.js');
             const { user, error } = await authenticateUser(req, env);
@@ -407,18 +415,14 @@ Format your output strictly as a JSON object:
           req.on('data', (c) => (body += c));
           req.on('end', async () => {
             try {
-              const { handleSaveQuestion, authenticateUser } = await import('./server/supabaseService.js');
+              const { handleSaveQuestion } = await import('./server/supabaseService.js');
               const data = body ? JSON.parse(body) : {};
-              const auth = await authenticateUser(req, env);
-              if (auth.user) {
-                data.created_by = auth.user.id;
-              }
               const result = await handleSaveQuestion(data, env);
               res.writeHead(result.status, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify(result));
+              return res.end(JSON.stringify(result));
             } catch (e: any) {
               res.writeHead(500, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: e?.message || 'Error saving question' }));
+              return res.end(JSON.stringify({ error: e?.message || 'Error saving question' }));
             }
           });
           return;
@@ -430,13 +434,21 @@ Format your output strictly as a JSON object:
   };
 }
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+
   return {
     plugins: [react(), geminiDevPlugin(env)],
     server: {
       port: 5173,
+      host: true,
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+      },
+    },
+    optimizeDeps: {
+      exclude: ['lucide-react', '@react-three/rapier'],
     },
   };
 });
