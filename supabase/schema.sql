@@ -85,7 +85,8 @@ BEGIN
 END $$;
 
 -- 2d. Create unified 'public.users' view aliased directly to public.profiles
-CREATE OR REPLACE VIEW public.users AS
+DROP VIEW IF EXISTS public.users CASCADE;
+CREATE VIEW public.users AS
 SELECT 
   id,
   email,
