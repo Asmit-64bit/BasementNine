@@ -217,8 +217,8 @@ export async function generateGeminiPuzzle(
     const backendRes = await fetch('/api/ai/puzzle', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ puzzleId, domain, difficulty: finalDifficulty, knowledgeBase }),
-      signal: AbortSignal.timeout(15000),
+      body: JSON.stringify({ puzzleId, domain, difficulty: finalDifficulty }),
+      signal: AbortSignal.timeout(45000),
     });
 
     if (backendRes.ok) {
