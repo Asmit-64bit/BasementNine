@@ -32,6 +32,7 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               const puzzleId = Number(data.puzzleId) || 1;
               const domain = data.domain || 'General Programming';
               const difficulty = data.difficulty || 'Beginner';
+              const knowledgeBase = data.knowledgeBase || '';
               const apiKey = req.headers['x-goog-api-key'] || env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
 
               if (!apiKey) {
@@ -43,14 +44,17 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               const systemInstruction = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
 You generate coding / cybersecurity escape room puzzles.
 
-CRITICAL INSTRUCTION: You MUST strictly restrict the scenario, puzzle logic, question, and code snippet entirely to the requested Domain Focus. Do not include concepts outside of this domain.`;
+CRITICAL INSTRUCTION: You MUST ONLY generate questions and code snippets based strictly on the concepts explicitly mentioned in the provided KNOWLEDGE BASE. Do not invent outside concepts.`;
 
               const userPrompt = `Generate puzzle for:
 Sector: ${context.level}
 Terminal Name: "${context.objectName}"
 Domain Focus: ${domain}
 Difficulty Level: ${difficulty}
-Expected Reward on Solve: "${context.reward}"`;
+Expected Reward on Solve: "${context.reward}"
+
+--- KNOWLEDGE BASE ---
+${knowledgeBase}`;
 
               const model = env.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
               let jsonResult: any = null;
@@ -60,7 +64,7 @@ Expected Reward on Solve: "${context.reward}"`;
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
                   body: JSON.stringify({
-                    system_instruction: { parts: [{ text: systemInstruction }] },
+                    systemInstruction: { parts: [{ text: systemInstruction }] },
                     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
                     generationConfig: { 
                       responseMimeType: 'application/json', 
@@ -88,9 +92,12 @@ Expected Reward on Solve: "${context.reward}"`;
                   if (raw) {
                     jsonResult = JSON.parse(raw);
                   }
+                } else {
+                  const errText = await gRes.text();
+                  console.error("Gemini API Error Response:", gRes.status, errText);
                 }
               } catch (e) {
-                console.error("Gemini API Error:", e);
+                console.error("Gemini API Network Error:", e);
               }
 
               if (!jsonResult || !jsonResult.question || !jsonResult.answer) {
@@ -166,7 +173,7 @@ ${solveTimeMs ? `The player solved this puzzle in ${Math.round(solveTimeMs / 100
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
                   body: JSON.stringify({
-                    system_instruction: { parts: [{ text: systemInstruction }] },
+                    systemInstruction: { parts: [{ text: systemInstruction }] },
                     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
                     generationConfig: { 
                       responseMimeType: 'application/json', 

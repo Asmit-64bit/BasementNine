@@ -6,6 +6,7 @@ import { Player } from './components/Player';
 import { GameUI } from './components/UI/GameUI';
 import { LandingPage } from './components/UI/LandingPage';
 import { DomainSelect } from './components/UI/DomainSelect';
+import { KnowledgeBaseScreen } from './components/UI/KnowledgeBaseScreen';
 import { LevelSelectRoom } from './components/UI/LevelSelectRoom';
 import { useGameStore } from './store/gameStore';
 import { LevelManager } from './components/LevelManager';
@@ -22,6 +23,10 @@ function App() {
 
   if (appState === 'DOMAIN_SELECT') {
     return <DomainSelect />;
+  }
+
+  if (appState === 'KNOWLEDGE_BASE') {
+    return <KnowledgeBaseScreen />;
   }
 
   if (appState === 'LEVEL_SELECT') {

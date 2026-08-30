@@ -87,8 +87,8 @@ interface GameState {
   setIsGeneratingPuzzle: (val: boolean) => void;
   escaped: boolean;
   setEscaped: (val: boolean) => void;
-  appState: 'LANDING' | 'DOMAIN_SELECT' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING';
-  setAppState: (state: 'LANDING' | 'DOMAIN_SELECT' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING') => void;
+  appState: 'LANDING' | 'DOMAIN_SELECT' | 'KNOWLEDGE_BASE' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING';
+  setAppState: (state: 'LANDING' | 'DOMAIN_SELECT' | 'KNOWLEDGE_BASE' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING') => void;
   selectedDomain: string | null;
   setSelectedDomain: (domain: string) => void;
   currentDifficulty: string;

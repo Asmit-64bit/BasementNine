@@ -15,7 +15,7 @@ export const DomainSelect: React.FC = () => {
 
   const handleSelect = (domainTitle: string) => {
     setSelectedDomain(domainTitle);
-    setAppState('LEVEL_SELECT');
+    setAppState('KNOWLEDGE_BASE');
   };
 
   return (
