@@ -69,17 +69,30 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+const MAX_BODY_SIZE = 1024 * 1024; // 1 MB limit
+
 async function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk) => (body += chunk));
+    let size = 0;
+
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY_SIZE) {
+        req.destroy();
+        return reject(new Error('Payload Too Large (Maximum 1MB allowed)'));
+      }
+      body += chunk;
+    });
+
     req.on('end', () => {
       try {
         resolve(body ? JSON.parse(body) : {});
-      } catch (err) {
-        reject(err);
+      } catch {
+        reject(new Error('Malformed JSON payload'));
       }
     });
+
     req.on('error', reject);
   });
 }
