@@ -232,7 +232,7 @@ export const LandingPage: React.FC = () => {
             <button
               type="button"
               className="title-menu-btn primary-btn"
-              onClick={() => handleButtonClick(() => setAppState('LEVEL_SELECT'))}
+              onClick={() => handleButtonClick(() => setAppState('DOMAIN_SELECT'))}
             >
               <span>{hasProgress ? 'RESUME THE CONFRONTATION' : 'STEP INTO THE ABYSS'}</span>
               <ArrowRight size={14} />
@@ -241,7 +241,7 @@ export const LandingPage: React.FC = () => {
             <button
               type="button"
               className="title-menu-btn"
-              onClick={() => handleButtonClick(() => setAppState('LEVEL_SELECT'))}
+              onClick={() => handleButtonClick(() => setAppState('DOMAIN_SELECT'))}
             >
               <span>CHAPTER ARCHIVES</span>
               <span style={{ fontSize: '10px', opacity: 0.6, fontFamily: 'monospace' }}>
@@ -349,7 +349,9 @@ export const LandingPage: React.FC = () => {
               className="chapter-action-btn"
               onClick={() => {
                 setShowLoreDossier(false);
-                setAppState('LEVEL_SELECT');
+                setTimeout(() => {
+                  setAppState('DOMAIN_SELECT');
+                }, 500);
               }}
               style={{ margin: 0 }}
             >

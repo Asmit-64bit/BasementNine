@@ -30,6 +30,8 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
             try {
               const data = body ? JSON.parse(body) : {};
               const puzzleId = Number(data.puzzleId) || 1;
+              const domain = data.domain || 'General Programming';
+              const difficulty = data.difficulty || 'Beginner';
               const apiKey = req.headers['x-goog-api-key'] || env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
 
               if (!apiKey) {
@@ -40,8 +42,8 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
               const prompt = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
-Topic: ${context.topic}
-Difficulty: ${context.difficulty}
+Domain Focus: ${domain}
+Difficulty Level: ${difficulty}
 Expected Reward on Solve: "${context.reward}"
 
 Format your output strictly as a JSON object adhering to this schema:
@@ -115,7 +117,7 @@ Format your output strictly as a JSON object adhering to this schema:
           req.on('end', async () => {
             try {
               const data = body ? JSON.parse(body) : {};
-              const { puzzle, userAnswer } = data;
+              const { puzzle, userAnswer, solveTimeMs, currentDifficulty } = data;
               const apiKey = req.headers['x-goog-api-key'] || env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
 
               if (!userAnswer || !puzzle) {
@@ -143,12 +145,14 @@ Question: "${puzzle.question}"
 Reference Code: "${puzzle.codeSnippet || 'None'}"
 Expected Reference Answers: ${JSON.stringify(puzzle.answer || [])}
 Player's Submission: "${userAnswer}"
+${solveTimeMs ? `The player solved this puzzle in ${Math.round(solveTimeMs / 1000)} seconds. Current Difficulty: ${currentDifficulty || 'Beginner'}. Based on this time (if they solved it very quickly under 30s, increase difficulty. If over 120s, decrease it. Otherwise keep it same).` : ''}
 
 Determine if the player's submission is a valid, correct solution/answer to the question.
 Format your output strictly as a JSON object:
 {
   "isCorrect": boolean,
-  "feedback": "Short in-character 1-sentence explanation"
+  "feedback": "Short in-character 1-sentence explanation",
+  "nextDifficulty": "Beginner, Intermediate, Advanced, or Expert"
 }`;
 
               const models = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
@@ -172,6 +176,7 @@ Format your output strictly as a JSON object:
                         JSON.stringify({
                           isCorrect: Boolean(evalRes.isCorrect),
                           feedback: evalRes.feedback || (evalRes.isCorrect ? 'Correct!' : 'Incorrect.'),
+                          nextDifficulty: evalRes.nextDifficulty
                         })
                       );
                     }

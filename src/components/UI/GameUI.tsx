@@ -29,6 +29,10 @@ import { TOTAL_LEVELS } from '../../data/levels';
 
 export const GameUI: React.FC = () => {
   const {
+    puzzleStartTime,
+    setPuzzleStartTime,
+    currentDifficulty,
+    setCurrentDifficulty,
     hoveredObject,
     message,
     inventory,
@@ -146,6 +150,7 @@ export const GameUI: React.FC = () => {
         if (isMounted) {
           setDynamicPuzzle(activePuzzleId, generated);
           setPuzzleSource(activePuzzleId, 'gemini');
+          setPuzzleStartTime(Date.now());
         }
       } catch (err) {
         console.error('Puzzle fetch error:', err);
@@ -172,6 +177,7 @@ export const GameUI: React.FC = () => {
       const generated = await generateGeminiPuzzle(activePuzzleId);
       setDynamicPuzzle(activePuzzleId, generated);
       setPuzzleSource(activePuzzleId, 'gemini');
+      setPuzzleStartTime(Date.now());
       if (generated.codeSnippet) {
         setReplCode(generated.codeSnippet);
       }
@@ -231,13 +237,21 @@ export const GameUI: React.FC = () => {
     playTerminalBlip();
 
     try {
-      const result = await evaluateAnswerWithGemini(activePuzzle, answer);
+      const solveTimeMs = puzzleStartTime ? Date.now() - puzzleStartTime : undefined;
+      const result = await evaluateAnswerWithGemini(activePuzzle, answer, solveTimeMs, currentDifficulty);
 
       if (result.isCorrect) {
+        if (result.nextDifficulty && result.nextDifficulty !== currentDifficulty) {
+          setCurrentDifficulty(result.nextDifficulty);
+          setFeedback(`[ SYSTEM ADAPTATION: Threat level escalating to ${result.nextDifficulty.toUpperCase()} ]\n${result.feedback || 'MEMORY RECONCILED.'}`);
+        } else {
+          setFeedback(result.feedback || 'MEMORY RECONCILED. Sector anomaly stabilized.');
+        }
+
         playSolveChime();
         restoreSanity(25);
         setError('');
-        setFeedback(result.feedback || 'MEMORY RECONCILED. Sector anomaly stabilized.');
+        
         setTimeout(() => {
           setAnswer('');
           setActivePuzzle(null);

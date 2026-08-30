@@ -5,6 +5,7 @@ import { Physics } from '@react-three/rapier';
 import { Player } from './components/Player';
 import { GameUI } from './components/UI/GameUI';
 import { LandingPage } from './components/UI/LandingPage';
+import { DomainSelect } from './components/UI/DomainSelect';
 import { LevelSelectRoom } from './components/UI/LevelSelectRoom';
 import { useGameStore } from './store/gameStore';
 import { LevelManager } from './components/LevelManager';
@@ -17,6 +18,10 @@ function App() {
 
   if (appState === 'LANDING') {
     return <LandingPage />;
+  }
+
+  if (appState === 'DOMAIN_SELECT') {
+    return <DomainSelect />;
   }
 
   if (appState === 'LEVEL_SELECT') {
