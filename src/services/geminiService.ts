@@ -1,5 +1,6 @@
 import type { Puzzle } from '../data/puzzles';
 import { puzzles as defaultPuzzles } from '../data/puzzles';
+import { domainSpecificPuzzles } from '../data/domainPuzzles';
 import { apiClient } from '../lib/apiClient';
 
 export interface PuzzleContext {
@@ -198,12 +199,16 @@ export async function generateGeminiPuzzle(
   customApiKey?: string
 ): Promise<Puzzle> {
   const context = PUZZLE_SLOTS[puzzleId];
-  const defaultFallback = defaultPuzzles.find((p) => p.id === puzzleId) || defaultPuzzles[0];
   const apiKey = customApiKey || getGeminiApiKey();
 
   const store = useGameStore.getState();
   const domain = store.selectedDomain || 'General Programming';
   const finalDifficulty = difficulty || store.currentDifficulty || 'Beginner';
+
+  const defaultFallback =
+    (domain && domainSpecificPuzzles[domain] && domainSpecificPuzzles[domain][puzzleId]) ||
+    defaultPuzzles.find((p) => p.id === puzzleId) ||
+    defaultPuzzles[0];
 
   // 1. First try calling our secure backend server
   try {
