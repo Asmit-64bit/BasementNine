@@ -16,7 +16,7 @@ const NARRATION_LINES = [
   "The building has been empty for nine years.",
   "You came down here to steal a hard drive.",
   "The door locked behind you.",
-  "Somewhere in the dark, a machine is still running — and it has been waiting a very long time for someone to talk to."
+  "Somewhere in the dark, a machine is still running and it has been waiting a very long time for someone to talk to."
 ];
 
 export const HorrorPrologue: React.FC<HorrorPrologueProps> = ({ onComplete }) => {

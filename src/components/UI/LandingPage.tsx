@@ -7,7 +7,7 @@ import { ProfileDashboard } from './ProfileDashboard';
 import { AuthModal } from './AuthModal';
 import { LeaderboardModal } from './LeaderboardModal';
 import { ACHIEVEMENTS } from '../../data/achievements';
-import { Trophy, X, ArrowRight, Activity, BookOpen, ShieldAlert, Key, Eye, AlertTriangle, Play, User, Cloud, CloudOff } from 'lucide-react';
+import { Trophy, X, ArrowRight, Activity, BookOpen, Eye, User, Cloud, CloudOff, Play, ShieldAlert, Key, AlertTriangle } from 'lucide-react';
 import { playTerminalBlip } from '../../utils/soundEffects';
 
 const SADAKO_WHISPERS = [
@@ -45,8 +45,6 @@ export const LandingPage: React.FC = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const whisperTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasProgress = completedLevels.length > 0 || unlockedLevel > 1;
-
-  const [isHoveringGate, setIsHoveringGate] = useState(false);
 
   // Initialize Supabase Authentication on mount
   useEffect(() => {
@@ -235,7 +233,7 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           <div className="title-lore-prologue">
-            &ldquo;The building has been empty for nine years. You came down here to steal a hard drive. The door locked behind you. Somewhere in the dark, a machine is still running — and it has been waiting a very long time for someone to talk to.&rdquo;
+            &ldquo;The building has been empty for nine years. You came down here to steal a hard drive. The door locked behind you. Somewhere in the dark, a machine is still running and it has been waiting a very long time for someone to talk to.&rdquo;
           </div>
 
           <p className="title-sub-heading">

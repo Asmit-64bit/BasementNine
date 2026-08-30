@@ -151,6 +151,10 @@ interface GameState {
   setProfileModalOpen: (open: boolean) => void;
   leaderboardModalOpen: boolean;
   setLeaderboardModalOpen: (open: boolean) => void;
+  archivesModalOpen: boolean;
+  setArchivesModalOpen: (open: boolean) => void;
+  activeArchiveTab: 'FACILITY' | 'INCIDENT_04' | 'DOSSIER';
+  setActiveArchiveTab: (tab: 'FACILITY' | 'INCIDENT_04' | 'DOSSIER') => void;
 
   // Score & Solo Solve Telemetry
   score: number;
@@ -206,6 +210,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   setProfileModalOpen: (open: boolean) => set({ profileModalOpen: open }),
   leaderboardModalOpen: false,
   setLeaderboardModalOpen: (open: boolean) => set({ leaderboardModalOpen: open }),
+  archivesModalOpen: false,
+  setArchivesModalOpen: (open: boolean) => set({ archivesModalOpen: open }),
+  activeArchiveTab: 'FACILITY',
+  setActiveArchiveTab: (tab: 'FACILITY' | 'INCIDENT_04' | 'DOSSIER') => set({ activeArchiveTab: tab }),
 
   score: (() => {
     try {
