@@ -37,7 +37,7 @@ export const LevelSelectRoom: React.FC = () => {
         setCurrentIndex((prev) => Math.min(LEVELS.length - 1, prev + 1));
       } else if (e.key === 'Enter' && isUnlocked) {
         setCurrentLevel(level.id);
-        setAppState('PLAYING');
+        setAppState('CHAPTER_PROLOGUE');
       } else if (e.key === 'Escape') {
         setAppState('LANDING');
       }
@@ -49,7 +49,7 @@ export const LevelSelectRoom: React.FC = () => {
   const handleEnterChapter = () => {
     if (!isUnlocked) return;
     setCurrentLevel(level.id);
-    setAppState('PLAYING');
+    setAppState('CHAPTER_PROLOGUE');
   };
 
   return (

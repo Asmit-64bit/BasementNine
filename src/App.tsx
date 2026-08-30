@@ -10,9 +10,10 @@ import { useGameStore } from './store/gameStore';
 import { LevelManager } from './components/LevelManager';
 import { LevelLighting } from './components/Environment/LevelLighting';
 import { HorrorAmbience } from './components/Audio/HorrorAmbience';
+import { ChapterPrologue } from './components/UI/ChapterPrologue';
 
 function App() {
-  const { appState } = useGameStore();
+  const { appState, setAppState } = useGameStore();
 
   if (appState === 'LANDING') {
     return <LandingPage />;
@@ -20,6 +21,10 @@ function App() {
 
   if (appState === 'LEVEL_SELECT') {
     return <LevelSelectRoom />;
+  }
+
+  if (appState === 'CHAPTER_PROLOGUE') {
+    return <ChapterPrologue onComplete={() => setAppState('PLAYING')} />;
   }
 
   return (

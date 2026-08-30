@@ -685,6 +685,27 @@ body, html, #root {
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.luto-reticle-dot::before,
+.luto-reticle-dot::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.7);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.luto-reticle-dot::before {
+  width: 16px;
+  height: 1px;
+}
+
+.luto-reticle-dot::after {
+  width: 1px;
+  height: 16px;
 }
 
 .luto-reticle-dot.focused {
