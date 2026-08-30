@@ -1,4 +1,4 @@
-import { Puzzle } from './puzzles';
+import type { Puzzle } from './puzzles';
 
 export const domainSpecificPuzzles: Record<string, Record<number, Puzzle>> = {
   'Data Structures & Algorithms': {
