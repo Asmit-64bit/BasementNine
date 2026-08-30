@@ -40,13 +40,10 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               }
 
               const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
-              const prompt = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
-Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
-Domain Focus: ${domain}
-Difficulty Level: ${difficulty}
-Expected Reward on Solve: "${context.reward}"
+              const systemInstruction = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
+You generate coding / cybersecurity escape room puzzles.
 
-CRITICAL INSTRUCTION: You MUST strictly restrict the scenario, puzzle logic, question, and code snippet entirely to the Domain Focus ('${domain}'). Do not include concepts outside of this domain.
+CRITICAL INSTRUCTION: You MUST strictly restrict the scenario, puzzle logic, question, and code snippet entirely to the requested Domain Focus. Do not include concepts outside of this domain.
 
 Format your output strictly as a JSON object adhering to this schema:
 {
@@ -59,6 +56,13 @@ Format your output strictly as a JSON object adhering to this schema:
   "nextClue": "a cryptic lore clue pointing to the next puzzle"
 }`;
 
+              const userPrompt = `Generate puzzle for:
+Sector: ${context.level}
+Terminal Name: "${context.objectName}"
+Domain Focus: ${domain}
+Difficulty Level: ${difficulty}
+Expected Reward on Solve: "${context.reward}"`;
+
               const model = env.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
               let jsonResult: any = null;
 
@@ -67,7 +71,8 @@ Format your output strictly as a JSON object adhering to this schema:
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
                   body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    system_instruction: { parts: [{ text: systemInstruction }] },
+                    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
                     generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
                   }),
                 });
@@ -141,14 +146,9 @@ Format your output strictly as a JSON object adhering to this schema:
                 return res.end(JSON.stringify({ isCorrect: false, feedback: 'Incorrect answer. Try again.' }));
               }
 
-              const evalPrompt = `You are a strict but fair judge for a technical coding puzzle game.
-Question: "${puzzle.question}"
-Reference Code: "${puzzle.codeSnippet || 'None'}"
-Expected Reference Answers: ${JSON.stringify(puzzle.answer || [])}
-Player's Submission: "${userAnswer}"
-${solveTimeMs ? `The player solved this puzzle in ${Math.round(solveTimeMs / 1000)} seconds. Current Difficulty: ${currentDifficulty || 'Beginner'}. Based on this time (if they solved it very quickly under 30s, increase difficulty. If over 120s, decrease it. Otherwise keep it same).` : ''}
-
+              const systemInstruction = `You are a strict but fair judge for a technical coding puzzle game.
 Determine if the player's submission is a valid, correct solution/answer to the question.
+
 Format your output strictly as a JSON object:
 {
   "isCorrect": boolean,
@@ -156,13 +156,20 @@ Format your output strictly as a JSON object:
   "nextDifficulty": "Beginner, Intermediate, Advanced, or Expert"
 }`;
 
+              const userPrompt = `Question: "${puzzle.question}"
+Reference Code: "${puzzle.codeSnippet || 'None'}"
+Expected Reference Answers: ${JSON.stringify(puzzle.answer || [])}
+Player's Submission: "${userAnswer}"
+${solveTimeMs ? `The player solved this puzzle in ${Math.round(solveTimeMs / 1000)} seconds. Current Difficulty: ${currentDifficulty || 'Beginner'}. Based on this time (if they solved it very quickly under 30s, increase difficulty. If over 120s, decrease it. Otherwise keep it same).` : ''}`;
+
               const model = env.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
               try {
                 const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
                   body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: evalPrompt }] }],
+                    system_instruction: { parts: [{ text: systemInstruction }] },
+                    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
                     generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
                   }),
                 });
