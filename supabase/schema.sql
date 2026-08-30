@@ -15,12 +15,20 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   achievements TEXT[] NOT NULL DEFAULT '{}',
   sanity INTEGER NOT NULL DEFAULT 100 CHECK (sanity >= 0 AND sanity <= 100),
   min_sanity_recorded INTEGER NOT NULL DEFAULT 100 CHECK (min_sanity_recorded >= 0 AND min_sanity_recorded <= 100),
+  score INTEGER NOT NULL DEFAULT 0 CHECK (score >= 0),
+  solo_solves_count INTEGER NOT NULL DEFAULT 0 CHECK (solo_solves_count >= 0),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- 2. Add columns if table was created previously
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS score INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS solo_solves_count INTEGER NOT NULL DEFAULT 0;
+
+-- 2b. Leaderboard fast indexing
+CREATE INDEX IF NOT EXISTS idx_profiles_score ON public.profiles (score DESC);
+CREATE INDEX IF NOT EXISTS idx_profiles_solo_solves ON public.profiles (solo_solves_count DESC);
 
 -- 3. Enable Row Level Security (RLS) on profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -30,6 +38,11 @@ DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 CREATE POLICY "Users can view their own profile" 
 ON public.profiles FOR SELECT 
 USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Public can view leaderboard stats" ON public.profiles;
+CREATE POLICY "Public can view leaderboard stats"
+ON public.profiles FOR SELECT
+USING (true);
 
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile" 

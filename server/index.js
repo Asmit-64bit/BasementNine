@@ -10,6 +10,7 @@ import {
   handleResetProfile,
   handleSaveQuestion,
   handleGetQuestions,
+  handleGetLeaderboard,
   authenticateUser,
   getSupabaseAdmin,
 } from './supabaseService.js';
@@ -234,6 +235,13 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       return sendJson(res, 500, { error: err.message });
     }
+  }
+
+  // 9b. Global Operators Leaderboard: GET /api/leaderboard
+  if (url.pathname === '/api/leaderboard' && req.method === 'GET') {
+    const limit = url.searchParams.get('limit') || 50;
+    const result = await handleGetLeaderboard(limit, process.env);
+    return sendJson(res, result.status, result);
   }
 
   // =========================================================================

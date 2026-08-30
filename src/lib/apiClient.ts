@@ -22,7 +22,21 @@ export interface ProfileData {
   achievements: string[];
   sanity: number;
   min_sanity_recorded: number;
+  score?: number;
+  solo_solves_count?: number;
   updated_at?: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  operator_name: string;
+  score: number;
+  solo_solves_count: number;
+  unlocked_level: number;
+  completed_levels: number[];
+  achievements_count: number;
+  min_sanity_recorded: number;
+  is_current_user?: boolean;
 }
 
 export interface AuthResponse {
@@ -186,5 +200,10 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(questionData),
     });
+  },
+
+  // 10. Get Global Operators Leaderboard
+  async getLeaderboard(limit: number = 50): Promise<{ leaderboard: LeaderboardEntry[]; totalOperators: number }> {
+    return request<{ leaderboard: LeaderboardEntry[]; totalOperators: number }>(`/api/leaderboard?limit=${limit}`);
   },
 };

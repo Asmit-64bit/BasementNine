@@ -257,6 +257,14 @@ export async function handleSyncProfile(user, payload, env) {
       ? Math.max(0, Math.min(100, Math.round(payload.min_sanity_recorded)))
       : sanityVal;
 
+    const scoreVal = typeof payload.score === 'number'
+      ? Math.max(0, Math.round(payload.score))
+      : 0;
+
+    const soloSolvesVal = typeof payload.solo_solves_count === 'number'
+      ? Math.max(0, Math.round(payload.solo_solves_count))
+      : 0;
+
     const profilePayload = {
       id: user.id,
       email: user.email || payload.email || undefined,
@@ -267,6 +275,8 @@ export async function handleSyncProfile(user, payload, env) {
       achievements: Array.isArray(payload.achievements) ? payload.achievements : [],
       sanity: sanityVal,
       min_sanity_recorded: minSanityVal,
+      score: scoreVal,
+      solo_solves_count: soloSolvesVal,
       updated_at: new Date().toISOString(),
     };
 
@@ -277,9 +287,11 @@ export async function handleSyncProfile(user, payload, env) {
       .maybeSingle();
 
     if (error) {
-      // Fallback if email column not in table yet
+      // Fallback if schema columns are partially migrated
       const fallbackPayload = { ...profilePayload };
       delete fallbackPayload.email;
+      delete fallbackPayload.score;
+      delete fallbackPayload.solo_solves_count;
       const { data: fbData, error: fbErr } = await supabase
         .from('profiles')
         .upsert(fallbackPayload)
@@ -433,5 +445,124 @@ export async function handleGetQuestions(filters = {}, env) {
     return { questions: questions || [], status: 200 };
   } catch (err) {
     return { error: err?.message || 'Error fetching questions', status: 500 };
+  }
+}
+
+/**
+ * Fetch Top Operators Leaderboard ranked by points gained from independent solves
+ */
+export async function handleGetLeaderboard(limit = 50, env = process.env) {
+  const supabase = getSupabaseAdmin(env);
+
+  // Default simulated leaderboard baseline so the mainframe feels inhabited
+  const simulatedBaselines = [
+    {
+      operator_name: 'CIPHER_GHOST_01',
+      score: 4850,
+      solo_solves_count: 14,
+      unlocked_level: 5,
+      completed_levels: [1, 2, 3, 4, 5],
+      achievements_count: 8,
+      min_sanity_recorded: 78,
+    },
+    {
+      operator_name: 'NULL_BYTE_SHADOW',
+      score: 3620,
+      solo_solves_count: 11,
+      unlocked_level: 5,
+      completed_levels: [1, 2, 3, 4],
+      achievements_count: 7,
+      min_sanity_recorded: 64,
+    },
+    {
+      operator_name: 'VOICE_IN_THE_WELL',
+      score: 2900,
+      solo_solves_count: 9,
+      unlocked_level: 4,
+      completed_levels: [1, 2, 3],
+      achievements_count: 5,
+      min_sanity_recorded: 42,
+    },
+    {
+      operator_name: 'SADAKO_TEST_RUNNER',
+      score: 2150,
+      solo_solves_count: 7,
+      unlocked_level: 3,
+      completed_levels: [1, 2],
+      achievements_count: 4,
+      min_sanity_recorded: 88,
+    },
+    {
+      operator_name: 'KAI_BREACHER_99',
+      score: 1400,
+      solo_solves_count: 5,
+      unlocked_level: 2,
+      completed_levels: [1],
+      achievements_count: 3,
+      min_sanity_recorded: 92,
+    },
+  ];
+
+  if (!supabase) {
+    const formatted = simulatedBaselines.slice(0, limit).map((entry, index) => ({
+      rank: index + 1,
+      ...entry,
+    }));
+    return { leaderboard: formatted, totalOperators: formatted.length, status: 200 };
+  }
+
+  try {
+    const { data: dbRows, error } = await supabase
+      .from('profiles')
+      .select('id, operator_name, score, solo_solves_count, unlocked_level, completed_levels, achievements, min_sanity_recorded, updated_at')
+      .order('score', { ascending: false })
+      .limit(Number(limit) || 50);
+
+    if (error || !dbRows || dbRows.length === 0) {
+      const formatted = simulatedBaselines.slice(0, limit).map((entry, index) => ({
+        rank: index + 1,
+        ...entry,
+      }));
+      return { leaderboard: formatted, totalOperators: formatted.length, status: 200 };
+    }
+
+    // Merge real database profiles with baseline ranking
+    const realEntries = dbRows.map((row) => ({
+      operator_name: row.operator_name || 'ANONYMOUS_OPERATOR',
+      score: typeof row.score === 'number' ? row.score : 0,
+      solo_solves_count: typeof row.solo_solves_count === 'number' ? row.solo_solves_count : 0,
+      unlocked_level: row.unlocked_level || 1,
+      completed_levels: Array.isArray(row.completed_levels) ? row.completed_levels : [],
+      achievements_count: Array.isArray(row.achievements) ? row.achievements.length : 0,
+      min_sanity_recorded: row.min_sanity_recorded ?? 100,
+      updated_at: row.updated_at,
+    }));
+
+    // Merge with baselines for entries not already covered
+    const allEntries = [...realEntries];
+    for (const sim of simulatedBaselines) {
+      if (!allEntries.some((e) => e.operator_name === sim.operator_name)) {
+        allEntries.push(sim);
+      }
+    }
+
+    allEntries.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    const ranked = allEntries.slice(0, Number(limit) || 50).map((item, idx) => ({
+      rank: idx + 1,
+      ...item,
+    }));
+
+    return {
+      leaderboard: ranked,
+      totalOperators: allEntries.length,
+      status: 200,
+    };
+  } catch {
+    const formatted = simulatedBaselines.slice(0, limit).map((entry, index) => ({
+      rank: index + 1,
+      ...entry,
+    }));
+    return { leaderboard: formatted, totalOperators: formatted.length, status: 200 };
   }
 }

@@ -5,6 +5,7 @@ import { BgmPlayer } from './BgmPlayer';
 import { HorrorPrologue } from './HorrorPrologue';
 import { ProfileDashboard } from './ProfileDashboard';
 import { AuthModal } from './AuthModal';
+import { LeaderboardModal } from './LeaderboardModal';
 import { ACHIEVEMENTS } from '../../data/achievements';
 import { Trophy, X, ArrowRight, Activity, BookOpen, ShieldAlert, Key, Eye, AlertTriangle, Play, User, Cloud, CloudOff } from 'lucide-react';
 import { playTerminalBlip } from '../../utils/soundEffects';
@@ -26,8 +27,11 @@ export const LandingPage: React.FC = () => {
     achievements,
     bestTimes,
     operatorName,
+    score,
     profileModalOpen,
     setProfileModalOpen,
+    leaderboardModalOpen,
+    setLeaderboardModalOpen,
   } = useGameStore();
 
   const { user, initializeAuth } = useAuthStore();
@@ -188,11 +192,22 @@ export const LandingPage: React.FC = () => {
 
             <button
               type="button"
+              onClick={() => handleButtonClick(() => setLeaderboardModalOpen(true))}
+              className="carousel-nav-link"
+              style={{ color: '#facc15' }}
+              title="Global Operators Leaderboard"
+            >
+              <Trophy size={13} color="#facc15" />
+              <span>LEADERBOARD {score > 0 ? `(${score.toLocaleString()} PTS)` : ''}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => handleButtonClick(() => setShowRecords(true))}
               className="carousel-nav-link"
               title="View Records & Telemetry"
             >
-              <Trophy size={13} />
+              <Activity size={13} />
               <span>RECORDS ({achievements.length}/{ACHIEVEMENTS.length})</span>
             </button>
 
@@ -450,6 +465,11 @@ export const LandingPage: React.FC = () => {
       {/* Operator Profile & Dossier Dashboard Modal */}
       {profileModalOpen && (
         <ProfileDashboard onClose={() => setProfileModalOpen(false)} />
+      )}
+
+      {/* Global Operators Leaderboard Modal */}
+      {leaderboardModalOpen && (
+        <LeaderboardModal isOpen={leaderboardModalOpen} onClose={() => setLeaderboardModalOpen(false)} />
       )}
 
       {/* Supabase Authentication & Clearance Gate Modal */}
