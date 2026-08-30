@@ -43,18 +43,7 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               const systemInstruction = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
 You generate coding / cybersecurity escape room puzzles.
 
-CRITICAL INSTRUCTION: You MUST strictly restrict the scenario, puzzle logic, question, and code snippet entirely to the requested Domain Focus. Do not include concepts outside of this domain.
-
-Format your output strictly as a JSON object adhering to this schema:
-{
-  "title": string,
-  "scenario": string,
-  "question": string,
-  "codeSnippet": string,
-  "answer": string[],
-  "hint": string,
-  "nextClue": "a cryptic lore clue pointing to the next puzzle"
-}`;
+CRITICAL INSTRUCTION: You MUST strictly restrict the scenario, puzzle logic, question, and code snippet entirely to the requested Domain Focus. Do not include concepts outside of this domain.`;
 
               const userPrompt = `Generate puzzle for:
 Sector: ${context.level}
@@ -73,7 +62,23 @@ Expected Reward on Solve: "${context.reward}"`;
                   body: JSON.stringify({
                     system_instruction: { parts: [{ text: systemInstruction }] },
                     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-                    generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+                    generationConfig: { 
+                      responseMimeType: 'application/json', 
+                      temperature: 0.7,
+                      responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                          title: { type: "STRING" },
+                          scenario: { type: "STRING" },
+                          question: { type: "STRING" },
+                          codeSnippet: { type: "STRING" },
+                          answer: { type: "ARRAY", items: { type: "STRING" } },
+                          hint: { type: "STRING" },
+                          nextClue: { type: "STRING" }
+                        },
+                        required: ["title", "scenario", "question", "codeSnippet", "answer", "hint", "nextClue"]
+                      }
+                    },
                   }),
                 });
                 
@@ -147,14 +152,7 @@ Expected Reward on Solve: "${context.reward}"`;
               }
 
               const systemInstruction = `You are a strict but fair judge for a technical coding puzzle game.
-Determine if the player's submission is a valid, correct solution/answer to the question.
-
-Format your output strictly as a JSON object:
-{
-  "isCorrect": boolean,
-  "feedback": "Short in-character 1-sentence explanation",
-  "nextDifficulty": "Beginner, Intermediate, Advanced, or Expert"
-}`;
+Determine if the player's submission is a valid, correct solution/answer to the question.`;
 
               const userPrompt = `Question: "${puzzle.question}"
 Reference Code: "${puzzle.codeSnippet || 'None'}"
@@ -170,7 +168,19 @@ ${solveTimeMs ? `The player solved this puzzle in ${Math.round(solveTimeMs / 100
                   body: JSON.stringify({
                     system_instruction: { parts: [{ text: systemInstruction }] },
                     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-                    generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
+                    generationConfig: { 
+                      responseMimeType: 'application/json', 
+                      temperature: 0.1,
+                      responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                          isCorrect: { type: "BOOLEAN" },
+                          feedback: { type: "STRING" },
+                          nextDifficulty: { type: "STRING" }
+                        },
+                        required: ["isCorrect", "feedback", "nextDifficulty"]
+                      }
+                    },
                   }),
                 });
                 if (gRes.ok) {
