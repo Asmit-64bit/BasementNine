@@ -191,6 +191,7 @@ export function clearStoredGeminiApiKey() {
  */
 export async function generateGeminiPuzzle(
   puzzleId: number,
+  difficulty?: string,
   customApiKey?: string
 ): Promise<Puzzle> {
   const context = PUZZLE_SLOTS[puzzleId];
@@ -207,7 +208,7 @@ export async function generateGeminiPuzzle(
     const backendRes = await fetch('/api/ai/puzzle', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ puzzleId }),
+      body: JSON.stringify({ puzzleId, difficulty }),
     });
 
     if (backendRes.ok) {

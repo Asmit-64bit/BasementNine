@@ -94,6 +94,16 @@ interface GameState {
   resetLevel: () => void;
   getPuzzle: (id: number) => Puzzle | undefined;
 
+  // Adaptive Learning System
+  baselineStartTime: number | null;
+  setBaselineStartTime: (time: number) => void;
+  baselineEndTime: number | null;
+  setBaselineEndTime: (time: number) => void;
+  adaptiveDifficulty: 'Beginner' | 'Intermediate' | 'Advanced' | null;
+  setAdaptiveDifficulty: (diff: 'Beginner' | 'Intermediate' | 'Advanced' | null) => void;
+  isReadingDocumentation: boolean;
+  setIsReadingDocumentation: (val: boolean) => void;
+
   // Sanity System State (Variable 0 - 100)
   sanity: number;
   minSanityRecorded: number;
@@ -231,6 +241,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (dynamic) return dynamic;
     return defaultPuzzles.find((p) => p.id === id);
   },
+
+  // Adaptive Learning System
+  baselineStartTime: null,
+  setBaselineStartTime: (time) => set({ baselineStartTime: time }),
+  baselineEndTime: null,
+  setBaselineEndTime: (time) => set({ baselineEndTime: time }),
+  adaptiveDifficulty: null,
+  setAdaptiveDifficulty: (diff) => set({ adaptiveDifficulty: diff }),
+  isReadingDocumentation: false,
+  setIsReadingDocumentation: (val) => set({ isReadingDocumentation: val }),
 
   // Sanity Mechanics (Variable 0 - 100)
   sanity: (() => {

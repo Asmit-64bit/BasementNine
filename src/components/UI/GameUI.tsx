@@ -25,6 +25,7 @@ import {
   generateGeminiPuzzle,
   evaluateAnswerWithGemini,
 } from '../../services/geminiService';
+import { DocumentationViewer } from './DocumentationViewer';
 import {
   playSolveChime,
   playErrorGlitch,
@@ -60,6 +61,14 @@ export const GameUI: React.FC = () => {
     sanity,
     decreaseSanity,
     restoreSanity,
+    baselineStartTime,
+    setBaselineStartTime,
+    baselineEndTime,
+    setBaselineEndTime,
+    adaptiveDifficulty,
+    setAdaptiveDifficulty,
+    isReadingDocumentation,
+    setIsReadingDocumentation,
   } = useGameStore();
 
   const [answer, setAnswer] = useState('');
@@ -139,9 +148,28 @@ export const GameUI: React.FC = () => {
   const activePuzzle = activePuzzleId ? getPuzzle(activePuzzleId) : null;
   const isAiGenerated = activePuzzleId ? puzzleSources[activePuzzleId] === 'gemini' : false;
 
+  // Track baseline start time when first puzzle opens
+  useEffect(() => {
+    if (activePuzzleId === 1 && !baselineStartTime) {
+      setBaselineStartTime(Date.now());
+    }
+  }, [activePuzzleId, baselineStartTime, setBaselineStartTime]);
+
+  // Handle documentation interception for Puzzle 3
+  useEffect(() => {
+    if (activePuzzleId === 3 && currentLevel === 1 && !dynamicPuzzles[3] && !isReadingDocumentation && !adaptiveDifficulty) {
+      // If they haven't solved 1 & 2 properly, fallback to intermediate
+      setAdaptiveDifficulty('Intermediate');
+      setIsReadingDocumentation(true);
+    } else if (activePuzzleId === 3 && currentLevel === 1 && !dynamicPuzzles[3] && !isReadingDocumentation) {
+      setIsReadingDocumentation(true);
+    }
+  }, [activePuzzleId, currentLevel, dynamicPuzzles, isReadingDocumentation, adaptiveDifficulty, setAdaptiveDifficulty, setIsReadingDocumentation]);
+
   // Automatically fetch / generate Gemini puzzle when an active puzzle is opened
   useEffect(() => {
-    if (!activePuzzleId || dynamicPuzzles[activePuzzleId]) {
+    // If we are reading documentation, the DocumentationViewer handles the background fetch
+    if (!activePuzzleId || dynamicPuzzles[activePuzzleId] || (activePuzzleId === 3 && isReadingDocumentation)) {
       return;
     }
 
@@ -150,7 +178,7 @@ export const GameUI: React.FC = () => {
       setIsLoadingPuzzle(true);
       setError('');
       try {
-        const generated = await generateGeminiPuzzle(activePuzzleId);
+        const generated = await generateGeminiPuzzle(activePuzzleId, adaptiveDifficulty || undefined);
         if (isMounted) {
           setDynamicPuzzle(activePuzzleId, generated);
           setPuzzleSource(activePuzzleId, 'gemini');
@@ -177,7 +205,7 @@ export const GameUI: React.FC = () => {
     setError('');
     setFeedback('');
     try {
-      const generated = await generateGeminiPuzzle(activePuzzleId);
+      const generated = await generateGeminiPuzzle(activePuzzleId, adaptiveDifficulty || undefined);
       setDynamicPuzzle(activePuzzleId, generated);
       setPuzzleSource(activePuzzleId, 'gemini');
       if (generated.codeSnippet) {
@@ -263,6 +291,21 @@ export const GameUI: React.FC = () => {
             setEscaped(true);
           } else {
             addToInventory(activePuzzle.reward);
+            
+            // Baseline Difficulty Computation on Puzzle 2 solve
+            if (activePuzzle.id === 2 && baselineStartTime && !baselineEndTime) {
+              const endTime = Date.now();
+              setBaselineEndTime(endTime);
+              const elapsedSeconds = (endTime - baselineStartTime) / 1000;
+              
+              if (elapsedSeconds < 45) {
+                setAdaptiveDifficulty('Advanced');
+              } else if (elapsedSeconds <= 90) {
+                setAdaptiveDifficulty('Intermediate');
+              } else {
+                setAdaptiveDifficulty('Beginner');
+              }
+            }
           }
         }, 1200);
       } else {
@@ -589,8 +632,10 @@ export const GameUI: React.FC = () => {
         </div>
       )}
 
-      {/* Psychological Dossier / Puzzle Modal */}
-      {activePuzzleId && (
+      {/* Psychological Dossier / Puzzle Modal or Documentation */}
+      {activePuzzleId && isReadingDocumentation && activePuzzleId === 3 ? (
+        <DocumentationViewer />
+      ) : activePuzzleId && (
         <div className="luto-dossier-overlay">
           <div className="luto-dossier-modal">
             {/* Dossier Header */}
