@@ -20,6 +20,7 @@ import {
   Check,
   Terminal,
   ShieldCheck,
+  Eye,
 } from 'lucide-react';
 import {
   generateGeminiPuzzle,
@@ -35,6 +36,10 @@ import { TOTAL_LEVELS } from '../../data/levels';
 
 export const GameUI: React.FC = () => {
   const {
+    puzzleStartTime,
+    setPuzzleStartTime,
+    currentDifficulty,
+    setCurrentDifficulty,
     hoveredObject,
     message,
     inventory,
@@ -182,6 +187,7 @@ export const GameUI: React.FC = () => {
         if (isMounted) {
           setDynamicPuzzle(activePuzzleId, generated);
           setPuzzleSource(activePuzzleId, 'gemini');
+          setPuzzleStartTime(Date.now());
         }
       } catch (err) {
         console.error('Puzzle fetch error:', err);
@@ -208,6 +214,7 @@ export const GameUI: React.FC = () => {
       const generated = await generateGeminiPuzzle(activePuzzleId, adaptiveDifficulty || undefined);
       setDynamicPuzzle(activePuzzleId, generated);
       setPuzzleSource(activePuzzleId, 'gemini');
+      setPuzzleStartTime(Date.now());
       if (generated.codeSnippet) {
         setReplCode(generated.codeSnippet);
       }
@@ -215,6 +222,16 @@ export const GameUI: React.FC = () => {
       console.error('Regenerate puzzle error:', err);
     } finally {
       setIsLoadingPuzzle(false);
+    }
+  };
+
+  const handleRevealAnswer = () => {
+    if (activePuzzle && activePuzzle.answer.length > 0) {
+      setAnswer(String(activePuzzle.answer[0]));
+      decreaseSanity(15);
+      setError('');
+      setFeedback('[ SYSTEM OVERRIDE: Answer revealed. Sanity penalized. ]');
+      playErrorGlitch();
     }
   };
 
@@ -267,13 +284,21 @@ export const GameUI: React.FC = () => {
     playTerminalBlip();
 
     try {
-      const result = await evaluateAnswerWithGemini(activePuzzle, answer);
+      const solveTimeMs = puzzleStartTime ? Date.now() - puzzleStartTime : undefined;
+      const result = await evaluateAnswerWithGemini(activePuzzle, answer, solveTimeMs, currentDifficulty);
 
       if (result.isCorrect) {
+        if (result.nextDifficulty && result.nextDifficulty !== currentDifficulty) {
+          setCurrentDifficulty(result.nextDifficulty);
+          setFeedback(`[ SYSTEM ADAPTATION: Threat level escalating to ${result.nextDifficulty.toUpperCase()} ]\n${result.feedback || 'MEMORY RECONCILED.'}`);
+        } else {
+          setFeedback(result.feedback || 'MEMORY RECONCILED. Sector anomaly stabilized.');
+        }
+
         playSolveChime();
         restoreSanity(25);
         setError('');
-        setFeedback(result.feedback || 'MEMORY RECONCILED. Sector anomaly stabilized.');
+        
         setTimeout(() => {
           setAnswer('');
           setActivePuzzle(null);
@@ -1008,9 +1033,34 @@ export const GameUI: React.FC = () => {
                         type="button"
                         onClick={() => setActiveModalTab('terminal')}
                         className="carousel-nav-link"
-                        style={{ padding: '4px 10px', fontSize: '9.5px' }}
+                        title="Return to Terminal"
+                        style={{
+                          padding: '4px 10px', 
+                          fontSize: '9.5px',
+                          ...(isAiGenerated ? {
+                            background: 'linear-gradient(90deg, rgba(96, 165, 250, 0.1), rgba(244, 114, 182, 0.1))',
+                            border: '1px solid rgba(244, 114, 182, 0.3)',
+                            color: '#f472b6',
+                            boxShadow: '0 0 10px rgba(96, 165, 250, 0.15)'
+                          } : {})
+                        }}
                       >
                         ← RETURN TO TERMINAL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRevealAnswer}
+                        disabled={isLoadingPuzzle || isEvaluating}
+                        className="carousel-nav-link"
+                        title="Reveal Answer (-15 Sanity)"
+                        style={{
+                          background: 'rgba(248, 113, 113, 0.1)',
+                          border: '1px solid rgba(248, 113, 113, 0.3)',
+                          color: '#f87171',
+                        }}
+                      >
+                        <Eye size={11} />
+                        <span>REVEAL</span>
                       </button>
                     </div>
                   </div>

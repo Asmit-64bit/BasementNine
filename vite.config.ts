@@ -30,6 +30,8 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
             try {
               const data = body ? JSON.parse(body) : {};
               const puzzleId = Number(data.puzzleId) || 1;
+              const domain = data.domain || 'General Programming';
+              const difficulty = data.difficulty || 'Beginner';
               const apiKey = req.headers['x-goog-api-key'] || env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
 
               if (!apiKey) {
@@ -40,9 +42,11 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
               const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
               const prompt = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
-Topic: ${context.topic}
-Difficulty: ${context.difficulty}
+Domain Focus: ${domain}
+Difficulty Level: ${difficulty}
 Expected Reward on Solve: "${context.reward}"
+
+CRITICAL INSTRUCTION: You MUST strictly restrict the scenario, puzzle logic, question, and code snippet entirely to the Domain Focus ('${domain}'). Do not include concepts outside of this domain.
 
 Format your output strictly as a JSON object adhering to this schema:
 {
@@ -55,29 +59,28 @@ Format your output strictly as a JSON object adhering to this schema:
   "nextClue": "a cryptic lore clue pointing to the next puzzle"
 }`;
 
-              const models = [env.VITE_GEMINI_MODEL || 'gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+              const model = env.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
               let jsonResult: any = null;
 
-              for (const m of models) {
-                try {
-                  const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
-                    body: JSON.stringify({
-                      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                      generationConfig: { responseMimeType: 'application/json', temperature: 0.8 },
-                    }),
-                  });
-                  if (!gRes.ok) continue;
+              try {
+                const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
+                  body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+                  }),
+                });
+                
+                if (gRes.ok) {
                   const gData = await gRes.json();
                   const raw = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
                   if (raw) {
                     jsonResult = JSON.parse(raw);
-                    break;
                   }
-                } catch {
-                  // try next
                 }
+              } catch (e) {
+                console.error("Gemini API Error:", e);
               }
 
               if (!jsonResult || !jsonResult.question || !jsonResult.answer) {
@@ -140,7 +143,7 @@ Format your output strictly as a JSON object adhering to this schema:
           req.on('end', async () => {
             try {
               const data = body ? JSON.parse(body) : {};
-              const { puzzle, userAnswer } = data;
+              const { puzzle, userAnswer, solveTimeMs, currentDifficulty } = data;
               const apiKey = req.headers['x-goog-api-key'] || env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
 
               if (!userAnswer || !puzzle) {
@@ -168,42 +171,43 @@ Question: "${puzzle.question}"
 Reference Code: "${puzzle.codeSnippet || 'None'}"
 Expected Reference Answers: ${JSON.stringify(puzzle.answer || [])}
 Player's Submission: "${userAnswer}"
+${solveTimeMs ? `The player solved this puzzle in ${Math.round(solveTimeMs / 1000)} seconds. Current Difficulty: ${currentDifficulty || 'Beginner'}. Based on this time (if they solved it very quickly under 30s, increase difficulty. If over 120s, decrease it. Otherwise keep it same).` : ''}
 
 Determine if the player's submission is a valid, correct solution/answer to the question.
 Format your output strictly as a JSON object:
 {
   "isCorrect": boolean,
-  "feedback": "Short in-character 1-sentence explanation"
+  "feedback": "Short in-character 1-sentence explanation",
+  "nextDifficulty": "Beginner, Intermediate, Advanced, or Expert"
 }`;
 
-              const models = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
-              for (const m of models) {
-                try {
-                  const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
-                    body: JSON.stringify({
-                      contents: [{ role: 'user', parts: [{ text: evalPrompt }] }],
-                      generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-                    }),
-                  });
-                  if (gRes.ok) {
-                    const gData = await gRes.json();
-                    const raw = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (raw) {
-                      const evalRes = JSON.parse(raw);
-                      res.writeHead(200, { 'Content-Type': 'application/json' });
-                      return res.end(
-                        JSON.stringify({
-                          isCorrect: Boolean(evalRes.isCorrect),
-                          feedback: evalRes.feedback || (evalRes.isCorrect ? 'Correct!' : 'Incorrect.'),
-                        })
-                      );
-                    }
+              const model = env.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
+              try {
+                const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(apiKey) },
+                  body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: evalPrompt }] }],
+                    generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
+                  }),
+                });
+                if (gRes.ok) {
+                  const gData = await gRes.json();
+                  const raw = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (raw) {
+                    const evalRes = JSON.parse(raw);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    return res.end(
+                      JSON.stringify({
+                        isCorrect: Boolean(evalRes.isCorrect),
+                        feedback: evalRes.feedback || (evalRes.isCorrect ? 'Correct!' : 'Incorrect.'),
+                        nextDifficulty: evalRes.nextDifficulty
+                      })
+                    );
                   }
-                } catch {
-                  // try next
                 }
+              } catch (e) {
+                console.error("Gemini API Eval Error:", e);
               }
 
               res.writeHead(200, { 'Content-Type': 'application/json' });

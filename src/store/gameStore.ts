@@ -87,8 +87,14 @@ interface GameState {
   setIsGeneratingPuzzle: (val: boolean) => void;
   escaped: boolean;
   setEscaped: (val: boolean) => void;
-  appState: 'LANDING' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING';
-  setAppState: (state: 'LANDING' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING') => void;
+  appState: 'LANDING' | 'DOMAIN_SELECT' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING';
+  setAppState: (state: 'LANDING' | 'DOMAIN_SELECT' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING') => void;
+  selectedDomain: string | null;
+  setSelectedDomain: (domain: string) => void;
+  currentDifficulty: string;
+  setCurrentDifficulty: (diff: string) => void;
+  puzzleStartTime: number | null;
+  setPuzzleStartTime: (time: number | null) => void;
   currentLevel: number;
   setCurrentLevel: (level: number) => void;
   resetLevel: () => void;
@@ -219,6 +225,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       get().resetSanity();
     }
   },
+  selectedDomain: null,
+  setSelectedDomain: (domain) => set({ selectedDomain: domain }),
+  currentDifficulty: 'Beginner',
+  setCurrentDifficulty: (diff) => set({ currentDifficulty: diff }),
+  puzzleStartTime: null,
+  setPuzzleStartTime: (time) => set({ puzzleStartTime: time }),
   currentLevel: 1,
   setCurrentLevel: (level) => {
     set({ currentLevel: level });
