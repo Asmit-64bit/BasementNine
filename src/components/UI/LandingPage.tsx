@@ -42,8 +42,9 @@ export const LandingPage: React.FC = () => {
   const [isGhostManifested, setIsGhostManifested] = useState(false);
   const [isJumpscare, setIsJumpscare] = useState(false);
   const [whisperText, setWhisperText] = useState<string | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const whisperTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isHoveringGate, setIsHoveringGate] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const whisperTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasProgress = completedLevels.length > 0 || unlockedLevel > 1;
 
   // Initialize Supabase Authentication on mount
@@ -218,9 +219,13 @@ export const LandingPage: React.FC = () => {
               <User size={13} color="#ef4444" />
               <span>{operatorName || 'OPERATOR'}</span>
               {user ? (
-                <Cloud size={12} color="#10b981" className="profile-header-cloud-icon" title="Cloud Sync Active" />
+                <div title="Cloud Sync Active">
+                  <Cloud size={12} color="#10b981" className="profile-header-cloud-icon" />
+                </div>
               ) : (
-                <CloudOff size={12} color="#64748b" className="profile-header-cloud-icon" title="Offline Mode" />
+                <div title="Offline Mode">
+                  <CloudOff size={12} color="#64748b" className="profile-header-cloud-icon" />
+                </div>
               )}
             </button>
           </div>
