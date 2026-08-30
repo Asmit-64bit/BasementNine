@@ -23,6 +23,7 @@ export interface ProfileData {
   sanity: number;
   min_sanity_recorded: number;
   score?: number;
+  points?: number;
   solo_solves_count?: number;
   updated_at?: string;
 }
@@ -31,6 +32,7 @@ export interface LeaderboardEntry {
   rank: number;
   operator_name: string;
   score: number;
+  points?: number;
   solo_solves_count: number;
   unlocked_level: number;
   completed_levels: number[];

@@ -174,7 +174,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           bestTimes: mergedBestTimes,
           sanity: cloudSanity,
           minSanityRecorded: cloudMinSanity,
-          score: profile.score,
+          score: profile.points ?? profile.score,
           solo_solves_count: profile.solo_solves_count,
         });
 
@@ -203,6 +203,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         sanity: Math.max(0, Math.min(100, gameStore.sanity)),
         min_sanity_recorded: Math.max(0, Math.min(100, gameStore.minSanityRecorded)),
         score: gameStore.score,
+        points: gameStore.score,
         solo_solves_count: gameStore.soloSolvesCount,
       };
 

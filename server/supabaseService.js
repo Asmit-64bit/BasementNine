@@ -257,7 +257,9 @@ export async function handleSyncProfile(user, payload, env) {
       ? Math.max(0, Math.min(100, Math.round(payload.min_sanity_recorded)))
       : sanityVal;
 
-    const scoreVal = typeof payload.score === 'number'
+    const pointsVal = typeof payload.points === 'number'
+      ? Math.max(0, Math.round(payload.points))
+      : typeof payload.score === 'number'
       ? Math.max(0, Math.round(payload.score))
       : 0;
 
@@ -275,7 +277,8 @@ export async function handleSyncProfile(user, payload, env) {
       achievements: Array.isArray(payload.achievements) ? payload.achievements : [],
       sanity: sanityVal,
       min_sanity_recorded: minSanityVal,
-      score: scoreVal,
+      score: pointsVal,
+      points: pointsVal,
       solo_solves_count: soloSolvesVal,
       updated_at: new Date().toISOString(),
     };
@@ -290,6 +293,7 @@ export async function handleSyncProfile(user, payload, env) {
       // Fallback if schema columns are partially migrated
       const fallbackPayload = { ...profilePayload };
       delete fallbackPayload.email;
+      delete fallbackPayload.points;
       delete fallbackPayload.score;
       delete fallbackPayload.solo_solves_count;
       const { data: fbData, error: fbErr } = await supabase
@@ -461,30 +465,65 @@ export async function handleGetLeaderboard(limit = 50, env = process.env) {
   try {
     const { data: dbRows, error } = await supabase
       .from('profiles')
-      .select('id, operator_name, score, solo_solves_count, unlocked_level, completed_levels, achievements, min_sanity_recorded, updated_at')
-      .order('score', { ascending: false })
+      .select('id, operator_name, points, score, solo_solves_count, unlocked_level, completed_levels, achievements, min_sanity_recorded, updated_at')
+      .order('points', { ascending: false })
       .limit(Number(limit) || 50);
 
     if (error) {
-      console.warn('Notice: leaderboard profiles query error:', error.message);
-      return { leaderboard: [], totalOperators: 0, status: 200 };
+      // Fallback if 'points' column is pending migration, query by 'score'
+      const { data: fallbackRows, error: fbErr } = await supabase
+        .from('profiles')
+        .select('id, operator_name, score, solo_solves_count, unlocked_level, completed_levels, achievements, min_sanity_recorded, updated_at')
+        .order('score', { ascending: false })
+        .limit(Number(limit) || 50);
+
+      if (fbErr || !fallbackRows) {
+        console.warn('Notice: leaderboard profiles query error:', fbErr?.message || error.message);
+        return { leaderboard: [], totalOperators: 0, status: 200 };
+      }
+
+      const realEntries = fallbackRows.map((row, idx) => {
+        const val = typeof row.score === 'number' ? row.score : 0;
+        return {
+          rank: idx + 1,
+          operator_name: row.operator_name || 'OPERATOR_09',
+          points: val,
+          score: val,
+          solo_solves_count: typeof row.solo_solves_count === 'number' ? row.solo_solves_count : 0,
+          unlocked_level: row.unlocked_level || 1,
+          completed_levels: Array.isArray(row.completed_levels) ? row.completed_levels : [],
+          achievements_count: Array.isArray(row.achievements) ? row.achievements.length : 0,
+          min_sanity_recorded: row.min_sanity_recorded ?? 100,
+          updated_at: row.updated_at,
+        };
+      });
+
+      return {
+        leaderboard: realEntries,
+        totalOperators: realEntries.length,
+        status: 200,
+      };
     }
 
     if (!dbRows || dbRows.length === 0) {
       return { leaderboard: [], totalOperators: 0, status: 200 };
     }
 
-    const realEntries = dbRows.map((row, idx) => ({
-      rank: idx + 1,
-      operator_name: row.operator_name || 'OPERATOR_09',
-      score: typeof row.score === 'number' ? row.score : 0,
-      solo_solves_count: typeof row.solo_solves_count === 'number' ? row.solo_solves_count : 0,
-      unlocked_level: row.unlocked_level || 1,
-      completed_levels: Array.isArray(row.completed_levels) ? row.completed_levels : [],
-      achievements_count: Array.isArray(row.achievements) ? row.achievements.length : 0,
-      min_sanity_recorded: row.min_sanity_recorded ?? 100,
-      updated_at: row.updated_at,
-    }));
+    const realEntries = dbRows.map((row, idx) => {
+      const val = typeof row.points === 'number' ? row.points : typeof row.score === 'number' ? row.score : 0;
+      return {
+        rank: idx + 1,
+        operator_name: row.operator_name || 'OPERATOR_09',
+        points: val,
+        score: val,
+        solo_solves_count: typeof row.solo_solves_count === 'number' ? row.solo_solves_count : 0,
+        unlocked_level: row.unlocked_level || 1,
+        completed_levels: Array.isArray(row.completed_levels) ? row.completed_levels : [],
+        achievements_count: Array.isArray(row.achievements) ? row.achievements.length : 0,
+        min_sanity_recorded: row.min_sanity_recorded ?? 100,
+        updated_at: row.updated_at,
+      };
+    });
 
     return {
       leaderboard: realEntries,

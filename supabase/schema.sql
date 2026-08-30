@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   sanity INTEGER NOT NULL DEFAULT 100 CHECK (sanity >= 0 AND sanity <= 100),
   min_sanity_recorded INTEGER NOT NULL DEFAULT 100 CHECK (min_sanity_recorded >= 0 AND min_sanity_recorded <= 100),
   score INTEGER NOT NULL DEFAULT 0 CHECK (score >= 0),
+  points INTEGER NOT NULL DEFAULT 0 CHECK (points >= 0),
   solo_solves_count INTEGER NOT NULL DEFAULT 0 CHECK (solo_solves_count >= 0),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -24,11 +25,30 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS password_hash TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS score INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS solo_solves_count INTEGER NOT NULL DEFAULT 0;
 
 -- 2b. Leaderboard fast indexing
 CREATE INDEX IF NOT EXISTS idx_profiles_score ON public.profiles (score DESC);
+CREATE INDEX IF NOT EXISTS idx_profiles_points ON public.profiles (points DESC);
 CREATE INDEX IF NOT EXISTS idx_profiles_solo_solves ON public.profiles (solo_solves_count DESC);
+
+-- 2c. Optional helper view for queries referencing public.users
+CREATE OR REPLACE VIEW public.users AS
+SELECT 
+  id,
+  email,
+  operator_name,
+  points,
+  score,
+  solo_solves_count,
+  unlocked_level,
+  completed_levels,
+  achievements,
+  sanity,
+  min_sanity_recorded,
+  updated_at
+FROM public.profiles;
 
 -- 3. Enable Row Level Security (RLS) on profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
