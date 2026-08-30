@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useGameStore } from '../../store/gameStore';
+import { useAuthStore } from '../../store/authStore';
 import { BgmPlayer } from './BgmPlayer';
 import { HorrorPrologue } from './HorrorPrologue';
+import { ProfileDashboard } from './ProfileDashboard';
+import { AuthModal } from './AuthModal';
 import { ACHIEVEMENTS } from '../../data/achievements';
-import { Trophy, X, ArrowRight, Activity, BookOpen, ShieldAlert, Key, Eye, AlertTriangle, Play } from 'lucide-react';
+import { Trophy, X, ArrowRight, Activity, BookOpen, ShieldAlert, Key, Eye, AlertTriangle, Play, User, Cloud, CloudOff } from 'lucide-react';
 import { playTerminalBlip } from '../../utils/soundEffects';
 
 const SADAKO_WHISPERS = [
@@ -16,7 +19,19 @@ const SADAKO_WHISPERS = [
 ];
 
 export const LandingPage: React.FC = () => {
-  const { setAppState, unlockedLevel, completedLevels, achievements, bestTimes } = useGameStore();
+  const {
+    setAppState,
+    unlockedLevel,
+    completedLevels,
+    achievements,
+    bestTimes,
+    operatorName,
+    profileModalOpen,
+    setProfileModalOpen,
+  } = useGameStore();
+
+  const { user, initializeAuth } = useAuthStore();
+
   const [showPrologue, setShowPrologue] = useState(true);
   const [showRecords, setShowRecords] = useState(false);
   const [showLoreDossier, setShowLoreDossier] = useState(false);
@@ -27,8 +42,12 @@ export const LandingPage: React.FC = () => {
   const whisperTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasProgress = completedLevels.length > 0 || unlockedLevel > 1;
 
-  const [ghostForm, setGhostForm] = useState<'standing' | 'crawling'>('standing');
   const [isHoveringGate, setIsHoveringGate] = useState(false);
+
+  // Initialize Supabase Authentication on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   const triggerJumpscare = useCallback(() => {
     setIsJumpscare(true);
@@ -42,7 +61,6 @@ export const LandingPage: React.FC = () => {
     const scheduleNextManifestation = () => {
       const nextDelay = 18000 + Math.random() * 20000;
       timerRef.current = setTimeout(() => {
-        setGhostForm(Math.random() > 0.4 ? 'standing' : 'crawling');
         setIsGhostManifested(true);
 
         // Low chance for a brief jumpscare
@@ -129,9 +147,9 @@ export const LandingPage: React.FC = () => {
         <div className={`gate-door-red-glow ${ghostActive ? 'active' : ''}`} />
 
         {/* Ghost Apparition */}
-        <div className={`gate-sadako-figure ${ghostActive ? 'active' : ''} ${ghostForm}`}>
+        <div className={`gate-sadako-figure ${ghostActive ? 'active' : ''}`}>
           <img
-            src={ghostForm === 'crawling' ? '/sadako-crawl.png' : '/sadako.png'}
+            src="/sadako.png"
             alt="Sadako Yamamura"
             className="gate-sadako-img"
           />
@@ -176,6 +194,21 @@ export const LandingPage: React.FC = () => {
             >
               <Trophy size={13} />
               <span>RECORDS ({achievements.length}/{ACHIEVEMENTS.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleButtonClick(() => setProfileModalOpen(true))}
+              className="carousel-nav-link profile-header-trigger-btn"
+              title="Open Operator Profile & Clearance Dossier"
+            >
+              <User size={13} color="#ef4444" />
+              <span>{operatorName || 'OPERATOR'}</span>
+              {user ? (
+                <Cloud size={12} color="#10b981" className="profile-header-cloud-icon" title="Cloud Sync Active" />
+              ) : (
+                <CloudOff size={12} color="#64748b" className="profile-header-cloud-icon" title="Offline Mode" />
+              )}
             </button>
           </div>
         </div>
@@ -411,6 +444,14 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Operator Profile & Dossier Dashboard Modal */}
+      {profileModalOpen && (
+        <ProfileDashboard onClose={() => setProfileModalOpen(false)} />
+      )}
+
+      {/* Supabase Authentication & Clearance Gate Modal */}
+      <AuthModal />
 
       {/* Ambient Audio Resonator */}
       <BgmPlayer />
