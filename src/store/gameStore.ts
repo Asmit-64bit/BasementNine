@@ -94,8 +94,9 @@ interface GameState {
   resetLevel: () => void;
   getPuzzle: (id: number) => Puzzle | undefined;
 
-  // Sanity System State
+  // Sanity System State (Variable 0 - 100)
   sanity: number;
+  minSanityRecorded: number;
   decreaseSanity: (amount: number) => void;
   restoreSanity: (amount: number) => void;
   resetSanity: () => void;
@@ -124,15 +125,49 @@ interface GameState {
   clearAchievementNotification: () => void;
   unlockAchievement: (id: string) => void;
 
+  // Operator Profile State
+  operatorName: string;
+  setOperatorName: (name: string) => void;
+  profileModalOpen: boolean;
+  setProfileModalOpen: (open: boolean) => void;
+
   completedLevels: number[];
   unlockedLevel: number;
   recentlyCompletedLevel: number | null;
   clearRecentlyCompleted: () => void;
   completeLevel: (level: number) => void;
   resetProgress: () => void;
+  hydrateFromCloud: (cloudData: {
+    completedLevels: number[];
+    unlockedLevel: number;
+    achievements: string[];
+    bestTimes: Record<number, number>;
+    sanity: number;
+    minSanityRecorded: number;
+  }) => void;
 }
 
+const OPERATOR_STORAGE_KEY = 'abyss-operator-name-v1';
+const SANITY_STORAGE_KEY = 'abyss-sanity-v1';
+const MIN_SANITY_STORAGE_KEY = 'abyss-min-sanity-v1';
+
 export const useGameStore = create<GameState>((set, get) => ({
+  operatorName: (() => {
+    try {
+      return localStorage.getItem(OPERATOR_STORAGE_KEY) || 'OPERATOR_09';
+    } catch {
+      return 'OPERATOR_09';
+    }
+  })(),
+  setOperatorName: (name: string) => {
+    try {
+      localStorage.setItem(OPERATOR_STORAGE_KEY, name);
+    } catch {}
+    set({ operatorName: name });
+  },
+  profileModalOpen: false,
+  setProfileModalOpen: (open: boolean) => set({ profileModalOpen: open }),
+
   hoveredObject: null,
   setHoveredObject: (name) => set({ hoveredObject: name }),
   inventory: [],
@@ -197,19 +232,54 @@ export const useGameStore = create<GameState>((set, get) => ({
     return defaultPuzzles.find((p) => p.id === id);
   },
 
-  // Sanity Mechanics
-  sanity: 100,
+  // Sanity Mechanics (Variable 0 - 100)
+  sanity: (() => {
+    try {
+      const val = localStorage.getItem(SANITY_STORAGE_KEY);
+      return val !== null ? Math.max(0, Math.min(100, parseInt(val, 10))) : 100;
+    } catch {
+      return 100;
+    }
+  })(),
+  minSanityRecorded: (() => {
+    try {
+      const val = localStorage.getItem(MIN_SANITY_STORAGE_KEY);
+      return val !== null ? Math.max(0, Math.min(100, parseInt(val, 10))) : 100;
+    } catch {
+      return 100;
+    }
+  })(),
   decreaseSanity: (amount: number) => {
-    set((state) => ({
-      sanity: Math.max(5, Math.min(100, state.sanity - amount)),
-    }));
+    set((state) => {
+      const nextSanity = Math.max(0, Math.min(100, state.sanity - amount));
+      const nextMin = Math.min(state.minSanityRecorded, nextSanity);
+      try {
+        localStorage.setItem(SANITY_STORAGE_KEY, nextSanity.toString());
+        localStorage.setItem(MIN_SANITY_STORAGE_KEY, nextMin.toString());
+      } catch {}
+      return {
+        sanity: nextSanity,
+        minSanityRecorded: nextMin,
+      };
+    });
   },
   restoreSanity: (amount: number) => {
-    set((state) => ({
-      sanity: Math.min(100, state.sanity + amount),
-    }));
+    set((state) => {
+      const nextSanity = Math.max(0, Math.min(100, state.sanity + amount));
+      try {
+        localStorage.setItem(SANITY_STORAGE_KEY, nextSanity.toString());
+      } catch {}
+      return {
+        sanity: nextSanity,
+      };
+    });
   },
-  resetSanity: () => set({ sanity: 100 }),
+  resetSanity: () => {
+    try {
+      localStorage.setItem(SANITY_STORAGE_KEY, '100');
+    } catch {}
+    set({ sanity: 100 });
+  },
 
   // Flashlight
   flashlightOn: true,
@@ -321,6 +391,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   resetProgress: () => {
     saveProgress({ completedLevels: [], unlockedLevel: 1 });
     saveBestTimes({});
+    saveAchievements([]);
+    try {
+      localStorage.setItem(SANITY_STORAGE_KEY, '100');
+      localStorage.setItem(MIN_SANITY_STORAGE_KEY, '100');
+    } catch {}
     set({
       completedLevels: [],
       unlockedLevel: 1,
@@ -329,8 +404,32 @@ export const useGameStore = create<GameState>((set, get) => ({
       dynamicPuzzles: {},
       puzzleSources: {},
       bestTimes: {},
+      achievements: [],
       sanity: 100,
+      minSanityRecorded: 100,
     });
     get().resetLevel();
+  },
+
+  hydrateFromCloud: (cloudData) => {
+    saveProgress({
+      completedLevels: cloudData.completedLevels,
+      unlockedLevel: cloudData.unlockedLevel,
+    });
+    saveAchievements(cloudData.achievements);
+    saveBestTimes(cloudData.bestTimes);
+    try {
+      localStorage.setItem(SANITY_STORAGE_KEY, cloudData.sanity.toString());
+      localStorage.setItem(MIN_SANITY_STORAGE_KEY, cloudData.minSanityRecorded.toString());
+    } catch {}
+
+    set({
+      completedLevels: cloudData.completedLevels,
+      unlockedLevel: cloudData.unlockedLevel,
+      achievements: cloudData.achievements,
+      bestTimes: cloudData.bestTimes,
+      sanity: cloudData.sanity,
+      minSanityRecorded: cloudData.minSanityRecorded,
+    });
   },
 }));

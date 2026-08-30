@@ -189,6 +189,124 @@ Format your output strictly as a JSON object:
           return;
         }
 
+        // --- BACKEND AUTH & USER DATABASE ROUTES ---
+
+        // POST /api/auth/signup
+        if (req.method === 'POST' && req.url === '/api/auth/signup') {
+          let body = '';
+          req.on('data', (c) => (body += c));
+          req.on('end', async () => {
+            try {
+              const { handleSignUp } = await import('./server/supabaseService.js');
+              const data = body ? JSON.parse(body) : {};
+              const result = await handleSignUp(data, env);
+              res.writeHead(result.status, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(result));
+            } catch (e: any) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: e?.message || 'Sign up error' }));
+            }
+          });
+          return;
+        }
+
+        // POST /api/auth/signin
+        if (req.method === 'POST' && req.url === '/api/auth/signin') {
+          let body = '';
+          req.on('data', (c) => (body += c));
+          req.on('end', async () => {
+            try {
+              const { handleSignIn } = await import('./server/supabaseService.js');
+              const data = body ? JSON.parse(body) : {};
+              const result = await handleSignIn(data, env);
+              res.writeHead(result.status, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(result));
+            } catch (e: any) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: e?.message || 'Sign in error' }));
+            }
+          });
+          return;
+        }
+
+        // GET /api/auth/session
+        if (req.method === 'GET' && req.url === '/api/auth/session') {
+          try {
+            const { authenticateUser, handleGetProfile } = await import('./server/supabaseService.js');
+            const { user, error } = await authenticateUser(req, env);
+            if (error || !user) {
+              res.writeHead(401, { 'Content-Type': 'application/json' });
+              return res.end(JSON.stringify({ user: null, profile: null, error }));
+            }
+            const profileRes = await handleGetProfile(user, env);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ user, profile: profileRes.profile }));
+          } catch (e: any) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: e?.message || 'Session error' }));
+          }
+        }
+
+        // GET /api/profile
+        if (req.method === 'GET' && req.url === '/api/profile') {
+          try {
+            const { authenticateUser, handleGetProfile } = await import('./server/supabaseService.js');
+            const { user, error } = await authenticateUser(req, env);
+            if (error || !user) {
+              res.writeHead(401, { 'Content-Type': 'application/json' });
+              return res.end(JSON.stringify({ error: error || 'Unauthorized' }));
+            }
+            const result = await handleGetProfile(user, env);
+            res.writeHead(result.status, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify(result));
+          } catch (e: any) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: e?.message || 'Profile error' }));
+          }
+        }
+
+        // POST /api/profile/sync
+        if (req.method === 'POST' && req.url === '/api/profile/sync') {
+          let body = '';
+          req.on('data', (c) => (body += c));
+          req.on('end', async () => {
+            try {
+              const { authenticateUser, handleSyncProfile } = await import('./server/supabaseService.js');
+              const { user, error } = await authenticateUser(req, env);
+              if (error || !user) {
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ error: error || 'Unauthorized' }));
+              }
+              const data = body ? JSON.parse(body) : {};
+              const result = await handleSyncProfile(user, data, env);
+              res.writeHead(result.status, { 'Content-Type': 'application/json' });
+              return res.end(JSON.stringify(result));
+            } catch (e: any) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              return res.end(JSON.stringify({ error: e?.message || 'Sync error' }));
+            }
+          });
+          return;
+        }
+
+        // POST /api/profile/reset
+        if (req.method === 'POST' && req.url === '/api/profile/reset') {
+          try {
+            const { authenticateUser, handleResetProfile } = await import('./server/supabaseService.js');
+            const { user, error } = await authenticateUser(req, env);
+            if (error || !user) {
+              res.writeHead(401, { 'Content-Type': 'application/json' });
+              return res.end(JSON.stringify({ error: error || 'Unauthorized' }));
+            }
+            const result = await handleResetProfile(user, env);
+            res.writeHead(result.status, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify(result));
+          } catch (e: any) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: e?.message || 'Reset error' }));
+          }
+        }
+
         next();
       });
     },
