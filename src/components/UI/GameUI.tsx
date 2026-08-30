@@ -384,8 +384,30 @@ export const GameUI: React.FC = () => {
 
       {/* Top Bar - Minimalist Chronometer & Flashlight */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', zIndex: 10 }}>
-        <div style={{ fontSize: '11px', letterSpacing: '0.2em', color: '#8b929e', textTransform: 'uppercase' }}>
-          CHAPTER 0{currentLevel} // LIMINAL LOCUS
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'auto' }}>
+          <button
+            type="button"
+            onClick={() => setAppState('LANDING')}
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.15em',
+              color: '#8b929e',
+              textTransform: 'uppercase',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              padding: '6px 12px',
+              borderRadius: '4px',
+              background: 'rgba(14, 16, 21, 0.8)',
+              transition: 'background 0.2s',
+              cursor: 'pointer',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+            onMouseOut={(e) => (e.currentTarget.style.background = 'rgba(14, 16, 21, 0.8)')}
+          >
+            ← BACK
+          </button>
+          <div style={{ fontSize: '11px', letterSpacing: '0.2em', color: '#8b929e', textTransform: 'uppercase' }}>
+            CHAPTER 0{currentLevel} // LIMINAL LOCUS
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', pointerEvents: 'auto' }}>
