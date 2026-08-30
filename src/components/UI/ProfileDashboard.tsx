@@ -25,6 +25,8 @@ import {
   LogOut,
   LogIn,
   RefreshCw,
+  Trophy,
+  Zap,
 } from 'lucide-react';
 import { useGameStore } from '../../store/gameStore';
 import { useAuthStore } from '../../store/authStore';
@@ -61,6 +63,9 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ onClose }) =
     bestTimes,
     sanity,
     minSanityRecorded,
+    score,
+    soloSolvesCount,
+    setLeaderboardModalOpen,
     resetProgress,
   } = useGameStore();
 
@@ -498,6 +503,52 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ onClose }) =
                   <span className="profile-stat-sub">
                     {Math.round((achievements.length / ACHIEVEMENTS.length) * 100)}% CLASSIFIED HONORS EARNED
                   </span>
+                </div>
+
+                <div className="profile-stat-card horror-dread-card" style={{ border: '1px solid rgba(234, 179, 8, 0.25)' }}>
+                  <div className="profile-stat-label">
+                    <Trophy size={14} color="#facc15" />
+                    <span>OPERATOR SCORE</span>
+                  </div>
+                  <div className="profile-stat-value" style={{ color: '#fef08a' }}>
+                    {score.toLocaleString()} <span style={{ fontSize: '12px', color: '#ca8a04', fontWeight: 600 }}>PTS</span>
+                  </div>
+                  <div style={{ marginTop: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playTerminalBlip();
+                        setLeaderboardModalOpen(true);
+                      }}
+                      style={{
+                        background: 'rgba(234, 179, 8, 0.15)',
+                        border: '1px solid rgba(234, 179, 8, 0.35)',
+                        color: '#facc15',
+                        padding: '4px 10px',
+                        borderRadius: '4px',
+                        fontSize: '10.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                      }}
+                    >
+                      <Trophy size={11} />
+                      <span>OPEN LEADERBOARD</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="profile-stat-card horror-dread-card" style={{ border: '1px solid rgba(34, 197, 94, 0.25)' }}>
+                  <div className="profile-stat-label">
+                    <Zap size={14} color="#4ade80" />
+                    <span>SOLO SOLVES</span>
+                  </div>
+                  <div className="profile-stat-value" style={{ color: '#4ade80' }}>
+                    {soloSolvesCount} <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>DECRYPTS</span>
+                  </div>
+                  <span className="profile-stat-sub">100% UNASSISTED INDEPENDENT SOLVES</span>
                 </div>
               </div>
 

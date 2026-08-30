@@ -28,6 +28,7 @@ import {
 } from '../../services/geminiService';
 import { StudyNotesModal } from './StudyNotesModal';
 import { DocumentationViewer } from './DocumentationViewer';
+import { LeaderboardModal } from './LeaderboardModal';
 import {
   playSolveChime,
   playErrorGlitch,
@@ -76,6 +77,15 @@ export const GameUI: React.FC = () => {
     setAdaptiveDifficulty,
     isReadingDocumentation,
     setIsReadingDocumentation,
+    score,
+    soloSolvesCount: _soloSolvesCount,
+    addScore,
+    puzzleHintUsedForCurrent,
+    puzzleErrorsForCurrent,
+    recordCurrentPuzzleHintUsed,
+    recordCurrentPuzzleError,
+    leaderboardModalOpen,
+    setLeaderboardModalOpen,
   } = useGameStore();
 
   const [answer, setAnswer] = useState('');
@@ -290,11 +300,35 @@ export const GameUI: React.FC = () => {
       const result = await evaluateAnswerWithGemini(activePuzzle, answer, solveTimeMs, currentDifficulty);
 
       if (result.isCorrect) {
+        // Calculate points based on independent unassisted solve
+        const isSolo = !puzzleHintUsedForCurrent;
+        const diff = (activePuzzle.debrief?.difficulty || currentDifficulty || 'Intermediate').toLowerCase();
+        const basePoints =
+          diff.includes('expert') ? 1000 :
+          diff.includes('advanced') ? 500 :
+          diff.includes('intermediate') ? 250 : 100;
+
+        const hintMultiplier = isSolo ? 1.25 : 0.7;
+        const errorPenalty = puzzleErrorsForCurrent * 10;
+        const precisionBonus = puzzleErrorsForCurrent === 0 ? 50 : 0;
+        const solveSec = solveTimeMs ? solveTimeMs / 1000 : 60;
+        const speedBonus = solveSec < 45 ? 50 : solveSec < 90 ? 25 : 0;
+        const sanityBonus = sanity >= 80 ? 30 : 0;
+
+        const totalEarned = Math.max(
+          25,
+          Math.round(basePoints * hintMultiplier) - errorPenalty + precisionBonus + speedBonus + sanityBonus
+        );
+
+        addScore(totalEarned, isSolo);
+
+        const pointBreakdownMsg = `+${totalEarned} PTS [${isSolo ? '🎯 INDEPENDENT SOLO SOLVE' : 'ASSISTED SOLVE'}]`;
+
         if (result.nextDifficulty && result.nextDifficulty !== currentDifficulty) {
           setCurrentDifficulty(result.nextDifficulty);
-          setFeedback(`[ SYSTEM ADAPTATION: Threat level escalating to ${result.nextDifficulty.toUpperCase()} ]\n${result.feedback || 'MEMORY RECONCILED.'}`);
+          setFeedback(`[ SYSTEM ADAPTATION: Threat level escalating to ${result.nextDifficulty.toUpperCase()} ]\n${result.feedback || 'MEMORY RECONCILED.'}\n${pointBreakdownMsg}`);
         } else {
-          setFeedback(result.feedback || 'MEMORY RECONCILED. Sector anomaly stabilized.');
+          setFeedback(`${result.feedback || 'MEMORY RECONCILED. Sector anomaly stabilized.'}\n${pointBreakdownMsg}`);
         }
 
         playSolveChime();
@@ -338,6 +372,7 @@ export const GameUI: React.FC = () => {
       } else {
         playErrorGlitch();
         recordError();
+        recordCurrentPuzzleError();
         decreaseSanity(15);
         setError(result.feedback || 'The anomaly rejects this sequence.');
       }
@@ -702,6 +737,26 @@ export const GameUI: React.FC = () => {
                     gap: '5px',
                     fontSize: '8.5px',
                     letterSpacing: '0.14em',
+                    color: '#facc15',
+                    background: 'rgba(234, 179, 8, 0.1)',
+                    padding: '2px 7px',
+                    borderRadius: '3px',
+                    border: '1px solid rgba(234, 179, 8, 0.25)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setLeaderboardModalOpen(true)}
+                  title="Open Leaderboard"
+                >
+                  <Trophy size={9} />
+                  <span>{score.toLocaleString()} PTS</span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '8.5px',
+                    letterSpacing: '0.14em',
                     color: isAiGenerated ? '#f4f5f8' : '#8b929e',
                     background: 'rgba(255, 255, 255, 0.05)',
                     padding: '2px 7px',
@@ -731,6 +786,7 @@ export const GameUI: React.FC = () => {
                 onClick={() => {
                   setActiveModalTab('hint');
                   recordHintUse();
+                  recordCurrentPuzzleHintUsed();
                 }}
                 className={`dossier-tab-btn ${activeModalTab === 'hint' ? 'active' : ''}`}
               >
@@ -1126,7 +1182,13 @@ export const GameUI: React.FC = () => {
         </div>
       )}
 
+      {/* Chapter Study Notes Modal */}
       <StudyNotesModal />
+
+      {/* Global Operators Leaderboard Modal */}
+      {leaderboardModalOpen && (
+        <LeaderboardModal isOpen={leaderboardModalOpen} onClose={() => setLeaderboardModalOpen(false)} />
+      )}
     </div>
   );
 };

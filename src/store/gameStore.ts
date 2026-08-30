@@ -149,6 +149,20 @@ interface GameState {
   setOperatorName: (name: string) => void;
   profileModalOpen: boolean;
   setProfileModalOpen: (open: boolean) => void;
+  leaderboardModalOpen: boolean;
+  setLeaderboardModalOpen: (open: boolean) => void;
+
+  // Score & Solo Solve Telemetry
+  score: number;
+  soloSolvesCount: number;
+  addScore: (points: number, isSolo: boolean) => void;
+
+  // Per-Puzzle Tracking for Pure Solo Solves
+  puzzleHintUsedForCurrent: boolean;
+  puzzleErrorsForCurrent: number;
+  recordCurrentPuzzleHintUsed: () => void;
+  recordCurrentPuzzleError: () => void;
+  resetCurrentPuzzleTrackers: () => void;
 
   completedLevels: number[];
   unlockedLevel: number;
@@ -163,12 +177,16 @@ interface GameState {
     bestTimes: Record<number, number>;
     sanity: number;
     minSanityRecorded: number;
+    score?: number;
+    solo_solves_count?: number;
   }) => void;
 }
 
 const OPERATOR_STORAGE_KEY = 'abyss-operator-name-v1';
 const SANITY_STORAGE_KEY = 'abyss-sanity-v1';
 const MIN_SANITY_STORAGE_KEY = 'abyss-min-sanity-v1';
+const SCORE_STORAGE_KEY = 'abyss-score-v1';
+const SOLO_SOLVES_STORAGE_KEY = 'abyss-solo-solves-v1';
 
 export const useGameStore = create<GameState>((set, get) => ({
   operatorName: (() => {
@@ -186,6 +204,44 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   profileModalOpen: false,
   setProfileModalOpen: (open: boolean) => set({ profileModalOpen: open }),
+  leaderboardModalOpen: false,
+  setLeaderboardModalOpen: (open: boolean) => set({ leaderboardModalOpen: open }),
+
+  score: (() => {
+    try {
+      const val = localStorage.getItem(SCORE_STORAGE_KEY);
+      return val ? Math.max(0, parseInt(val, 10)) : 0;
+    } catch {
+      return 0;
+    }
+  })(),
+
+  soloSolvesCount: (() => {
+    try {
+      const val = localStorage.getItem(SOLO_SOLVES_STORAGE_KEY);
+      return val ? Math.max(0, parseInt(val, 10)) : 0;
+    } catch {
+      return 0;
+    }
+  })(),
+
+  addScore: (points: number, isSolo: boolean) => {
+    set((state) => {
+      const newScore = Math.max(0, state.score + points);
+      const newSolos = isSolo ? state.soloSolvesCount + 1 : state.soloSolvesCount;
+      try {
+        localStorage.setItem(SCORE_STORAGE_KEY, newScore.toString());
+        localStorage.setItem(SOLO_SOLVES_STORAGE_KEY, newSolos.toString());
+      } catch {}
+      return { score: newScore, soloSolvesCount: newSolos };
+    });
+  },
+
+  puzzleHintUsedForCurrent: false,
+  puzzleErrorsForCurrent: 0,
+  recordCurrentPuzzleHintUsed: () => set({ puzzleHintUsedForCurrent: true }),
+  recordCurrentPuzzleError: () => set((state) => ({ puzzleErrorsForCurrent: state.puzzleErrorsForCurrent + 1 })),
+  resetCurrentPuzzleTrackers: () => set({ puzzleHintUsedForCurrent: false, puzzleErrorsForCurrent: 0 }),
 
   hoveredObject: null,
   setHoveredObject: (name) => set({ hoveredObject: name }),
@@ -206,6 +262,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   setActivePuzzle: (id) => {
     set({ activePuzzleId: id });
     if (id) {
+      get().resetCurrentPuzzleTrackers();
       // Check first breach trigger when puzzle is opened
       get().unlockAchievement('first_breach');
     }
@@ -436,6 +493,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       localStorage.setItem(SANITY_STORAGE_KEY, '100');
       localStorage.setItem(MIN_SANITY_STORAGE_KEY, '100');
+      localStorage.setItem(SCORE_STORAGE_KEY, '0');
+      localStorage.setItem(SOLO_SOLVES_STORAGE_KEY, '0');
     } catch {}
     set({
       completedLevels: [],
@@ -448,6 +507,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       achievements: [],
       sanity: 100,
       minSanityRecorded: 100,
+      score: 0,
+      soloSolvesCount: 0,
     });
     get().resetLevel();
   },
@@ -459,9 +520,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
     saveAchievements(cloudData.achievements);
     saveBestTimes(cloudData.bestTimes);
+    const scoreVal = typeof cloudData.score === 'number' ? cloudData.score : get().score;
+    const soloVal = typeof cloudData.solo_solves_count === 'number' ? cloudData.solo_solves_count : get().soloSolvesCount;
     try {
       localStorage.setItem(SANITY_STORAGE_KEY, cloudData.sanity.toString());
       localStorage.setItem(MIN_SANITY_STORAGE_KEY, cloudData.minSanityRecorded.toString());
+      localStorage.setItem(SCORE_STORAGE_KEY, scoreVal.toString());
+      localStorage.setItem(SOLO_SOLVES_STORAGE_KEY, soloVal.toString());
     } catch {}
 
     set({
@@ -471,6 +536,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       bestTimes: cloudData.bestTimes,
       sanity: cloudData.sanity,
       minSanityRecorded: cloudData.minSanityRecorded,
+      score: scoreVal,
+      soloSolvesCount: soloVal,
     });
   },
 }));

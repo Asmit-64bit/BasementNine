@@ -428,6 +428,21 @@ Format your output strictly as a JSON object:
           return;
         }
 
+        // GET /api/leaderboard
+        if (req.method === 'GET' && req.url?.startsWith('/api/leaderboard')) {
+          try {
+            const { handleGetLeaderboard } = await import('./server/supabaseService.js');
+            const url = new URL(req.url, 'http://localhost');
+            const limit = url.searchParams.get('limit') || 50;
+            const result = await handleGetLeaderboard(limit, env);
+            res.writeHead(result.status, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify(result));
+          } catch (e: any) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: e?.message || 'Error fetching leaderboard' }));
+          }
+        }
+
         next();
       });
     },

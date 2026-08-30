@@ -15,12 +15,95 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   achievements TEXT[] NOT NULL DEFAULT '{}',
   sanity INTEGER NOT NULL DEFAULT 100 CHECK (sanity >= 0 AND sanity <= 100),
   min_sanity_recorded INTEGER NOT NULL DEFAULT 100 CHECK (min_sanity_recorded >= 0 AND min_sanity_recorded <= 100),
+  score INTEGER NOT NULL DEFAULT 0 CHECK (score >= 0),
+  points INTEGER NOT NULL DEFAULT 0 CHECK (points >= 0),
+  solo_solves_count INTEGER NOT NULL DEFAULT 0 CHECK (solo_solves_count >= 0),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- 2. Add columns if table was created previously
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS operator_name TEXT NOT NULL DEFAULT 'OPERATOR_09';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS unlocked_level INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS completed_levels INTEGER[] NOT NULL DEFAULT '{}';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS best_times JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS achievements TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sanity INTEGER NOT NULL DEFAULT 100;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS min_sanity_recorded INTEGER NOT NULL DEFAULT 100;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS score INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS solo_solves_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+
+-- 2b. Leaderboard fast indexing
+CREATE INDEX IF NOT EXISTS idx_profiles_points ON public.profiles (points DESC);
+CREATE INDEX IF NOT EXISTS idx_profiles_score ON public.profiles (score DESC);
+CREATE INDEX IF NOT EXISTS idx_profiles_solo_solves ON public.profiles (solo_solves_count DESC);
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles (email);
+
+-- 2c. Merge data from physical 'public.users' table if it exists into 'public.profiles'
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'public' AND table_name = 'users' AND table_type = 'BASE TABLE'
+  ) THEN
+    INSERT INTO public.profiles (
+      id, email, operator_name, points, score, solo_solves_count, unlocked_level, completed_levels, achievements, sanity, min_sanity_recorded, updated_at
+    )
+    SELECT 
+      id, 
+      COALESCE(email, ''), 
+      COALESCE(operator_name, 'OPERATOR_09'),
+      COALESCE(points, score, 0),
+      COALESCE(score, points, 0),
+      COALESCE(solo_solves_count, 0),
+      COALESCE(unlocked_level, 1),
+      COALESCE(completed_levels, '{}'),
+      COALESCE(achievements, '{}'),
+      COALESCE(sanity, 100),
+      COALESCE(min_sanity_recorded, 100),
+      COALESCE(updated_at, now())
+    FROM public.users
+    ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email,
+      operator_name = EXCLUDED.operator_name,
+      points = EXCLUDED.points,
+      score = EXCLUDED.score,
+      solo_solves_count = EXCLUDED.solo_solves_count,
+      unlocked_level = EXCLUDED.unlocked_level,
+      completed_levels = EXCLUDED.completed_levels,
+      achievements = EXCLUDED.achievements,
+      sanity = EXCLUDED.sanity,
+      min_sanity_recorded = EXCLUDED.min_sanity_recorded,
+      updated_at = EXCLUDED.updated_at;
+
+    DROP TABLE public.users CASCADE;
+  END IF;
+END $$;
+
+-- 2d. Create unified 'public.users' view aliased directly to public.profiles
+DROP VIEW IF EXISTS public.users CASCADE;
+CREATE VIEW public.users AS
+SELECT 
+  id,
+  email,
+  password_hash,
+  operator_name,
+  points,
+  score,
+  solo_solves_count,
+  unlocked_level,
+  completed_levels,
+  best_times,
+  achievements,
+  sanity,
+  min_sanity_recorded,
+  created_at,
+  updated_at
+FROM public.profiles;
 
 -- 3. Enable Row Level Security (RLS) on profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -30,6 +113,11 @@ DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 CREATE POLICY "Users can view their own profile" 
 ON public.profiles FOR SELECT 
 USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Public can view leaderboard stats" ON public.profiles;
+CREATE POLICY "Public can view leaderboard stats"
+ON public.profiles FOR SELECT
+USING (true);
 
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile" 
@@ -54,7 +142,10 @@ BEGIN
     best_times,
     achievements,
     sanity,
-    min_sanity_recorded
+    min_sanity_recorded,
+    points,
+    score,
+    solo_solves_count
   )
   VALUES (
     NEW.id,
@@ -65,7 +156,10 @@ BEGIN
     '{}'::jsonb,
     '{}',
     100,
-    100
+    100,
+    0,
+    0,
+    0
   )
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,

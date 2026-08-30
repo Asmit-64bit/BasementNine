@@ -65,6 +65,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           bestTimes: mergedBestTimes,
           sanity: cloudSanity,
           minSanityRecorded: cloudMinSanity,
+          score: profile.score,
+          solo_solves_count: profile.solo_solves_count,
         });
       }
     } catch (err) {
@@ -94,6 +96,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           bestTimes: res.profile.best_times || {},
           sanity: res.profile.sanity ?? 100,
           minSanityRecorded: res.profile.min_sanity_recorded ?? 100,
+          score: res.profile.score,
+          solo_solves_count: res.profile.solo_solves_count,
         });
       }
       return {};
@@ -170,6 +174,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           bestTimes: mergedBestTimes,
           sanity: cloudSanity,
           minSanityRecorded: cloudMinSanity,
+          score: profile.points ?? profile.score,
+          solo_solves_count: profile.solo_solves_count,
         });
 
         set({ profile, isSyncing: false });
@@ -196,6 +202,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         achievements: gameStore.achievements,
         sanity: Math.max(0, Math.min(100, gameStore.sanity)),
         min_sanity_recorded: Math.max(0, Math.min(100, gameStore.minSanityRecorded)),
+        score: gameStore.score,
+        points: gameStore.score,
+        solo_solves_count: gameStore.soloSolvesCount,
       };
 
       const { profile } = await apiClient.syncProfile(payload);
