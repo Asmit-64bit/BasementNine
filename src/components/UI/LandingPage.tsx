@@ -216,7 +216,7 @@ export const LandingPage: React.FC = () => {
         {/* Hero Title & Lore-Driven Prologue */}
         <div className="title-hero-content">
           <h1 className="title-main-heading">
-            SCHRÖDINGER&apos;S<br />ABYSS
+            BASEMENT<br />NINE
           </h1>
 
           <div className="title-lore-prologue">
@@ -232,16 +232,16 @@ export const LandingPage: React.FC = () => {
             <button
               type="button"
               className="title-menu-btn primary-btn"
-              onClick={() => handleButtonClick(() => setAppState('LEVEL_SELECT'))}
+              onClick={() => handleButtonClick(() => setAppState('DOMAIN_SELECT'))}
             >
-              <span>{hasProgress ? 'RESUME THE CONFRONTATION' : 'STEP INTO THE ABYSS'}</span>
+              <span>{hasProgress ? 'RESUME THE CONFRONTATION' : 'STEP INTO BASEMENT NINE'}</span>
               <ArrowRight size={14} />
             </button>
 
             <button
               type="button"
               className="title-menu-btn"
-              onClick={() => handleButtonClick(() => setAppState('LEVEL_SELECT'))}
+              onClick={() => handleButtonClick(() => setAppState('DOMAIN_SELECT'))}
             >
               <span>CHAPTER ARCHIVES</span>
               <span style={{ fontSize: '10px', opacity: 0.6, fontFamily: 'monospace' }}>
@@ -301,7 +301,7 @@ export const LandingPage: React.FC = () => {
             <div className="lore-section-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f4f5f8', fontSize: '12px', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '6px' }}>
                 <Eye size={14} color="#f4f5f8" />
-                <span>I. THE NATURE OF THE ABYSS</span>
+                <span>I. THE NATURE OF BASEMENT NINE</span>
               </div>
               <p style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: 1.7, margin: 0, fontWeight: 300 }}>
                 In 1998, the facility beneath <span className="redacted-bar">█████████</span> reported spatial distortions mirroring the mental breakdown of Chief Investigator <span className="redacted-bar">█████</span>. Corridors began looping indefinitely, doors sealed themselves with algorithmic paradoxes, and the dark began projecting physical manifestations of unexpressed grief.
@@ -349,7 +349,9 @@ export const LandingPage: React.FC = () => {
               className="chapter-action-btn"
               onClick={() => {
                 setShowLoreDossier(false);
-                setAppState('LEVEL_SELECT');
+                setTimeout(() => {
+                  setAppState('DOMAIN_SELECT');
+                }, 500);
               }}
               style={{ margin: 0 }}
             >

@@ -13,6 +13,10 @@ import {
   authenticateUser,
   getSupabaseAdmin,
 } from './supabaseService.js';
+import {
+  executeGeminiWithRotation,
+  getGeminiPoolStatus,
+} from './geminiKeyPool.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,17 +73,30 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+const MAX_BODY_SIZE = 1024 * 1024; // 1 MB limit
+
 async function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk) => (body += chunk));
+    let size = 0;
+
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY_SIZE) {
+        req.destroy();
+        return reject(new Error('Payload Too Large (Maximum 1MB allowed)'));
+      }
+      body += chunk;
+    });
+
     req.on('end', () => {
       try {
         resolve(body ? JSON.parse(body) : {});
-      } catch (err) {
-        reject(err);
+      } catch {
+        reject(new Error('Malformed JSON payload'));
       }
     });
+
     req.on('error', reject);
   });
 }
@@ -101,12 +118,20 @@ const server = http.createServer(async (req, res) => {
   // 1. Health Check
   if (url.pathname === '/api/health' && req.method === 'GET') {
     const supabaseAdmin = getSupabaseAdmin(process.env);
+    const poolStatus = getGeminiPoolStatus(process.env);
     return sendJson(res, 200, {
       status: 'ok',
       service: "Basement Nine Backend API",
-      aiConfigured: Boolean(GEMINI_API_KEY),
+      aiConfigured: poolStatus.activeKeys > 0,
+      geminiPool: poolStatus,
       databaseConfigured: Boolean(supabaseAdmin),
     });
+  }
+
+  // 1b. Gemini Key Pool Telemetry Status: GET /api/ai/pool-status
+  if (url.pathname === '/api/ai/pool-status' && req.method === 'GET') {
+    const poolStatus = getGeminiPoolStatus(process.env);
+    return sendJson(res, 200, poolStatus);
   }
 
   // =========================================================================
@@ -220,25 +245,20 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await parseBody(req);
       const puzzleId = Number(body.puzzleId) || 1;
+      const adaptiveDifficulty = body.difficulty;
       const clientKey = req.headers['x-goog-api-key'] || body.customApiKey;
-      const apiKey = clientKey || GEMINI_API_KEY;
-
-      if (!apiKey) {
-        return sendJson(res, 400, {
-          error: 'No Gemini API key available on backend or client request header.',
-        });
-      }
 
       const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
+      const finalDifficulty = adaptiveDifficulty || context.difficulty;
 
       const prompt = `
-You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
+You are the corrupted sentient core of a paranormal facility called "Basement Nine".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
 
 Domain: ${context.domain}
 Tags: ${context.tags.join(', ')}
 Topic: ${context.topic}
-Difficulty: ${context.difficulty}
+Difficulty: ${finalDifficulty}
 Expected Reward on Solve: "${context.reward}"
 
 Requirements:
@@ -264,42 +284,59 @@ Format your output strictly as a JSON object adhering to this schema:
 }
 `;
 
-      const models = [process.env.VITE_GEMINI_MODEL || 'gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
-      let jsonResult = null;
+      const jsonResult = await executeGeminiWithRotation(
+        async (apiKey, _keyIndex) => {
+          const models = [
+            process.env.VITE_GEMINI_MODEL || 'gemini-3.6-flash',
+            'gemini-3.6-flash',
+            'gemini-3.5-flash',
+            'gemini-2.5-flash',
+          ];
 
-      for (const m of models) {
-        try {
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey,
-              },
-              body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
-              }),
-            }
-          );
+          let lastErr = null;
 
-          if (geminiRes.ok) {
-            const data = await geminiRes.json();
-            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (rawText) {
-              jsonResult = JSON.parse(rawText);
-              break;
+          for (const m of models) {
+            try {
+              const geminiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey,
+                  },
+                  body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+                  }),
+                }
+              );
+
+              if (!geminiRes.ok) {
+                const errText = await geminiRes.text();
+                const err = new Error(errText || `Gemini API HTTP ${geminiRes.status}`);
+                err.status = geminiRes.status;
+                throw err;
+              }
+
+              const data = await geminiRes.json();
+              const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (rawText) {
+                return JSON.parse(rawText);
+              }
+            } catch (err) {
+              lastErr = err;
+              if (err.status === 429 || err.status === 402 || err.status === 403) {
+                throw err; // Trigger key rotation to next key in pool
+              }
             }
           }
-        } catch {
-          // try next model
-        }
-      }
 
-      if (!jsonResult) {
-        return sendJson(res, 502, { error: 'Gemini API failed to generate valid puzzle JSON' });
-      }
+          throw lastErr || new Error('Gemini API failed to generate valid puzzle JSON');
+        },
+        clientKey,
+        process.env
+      );
 
       const validated = {
         id: puzzleId,
@@ -321,9 +358,26 @@ Format your output strictly as a JSON object adhering to this schema:
       };
 
       // Automatically archive generated question to database in background
-      handleSaveQuestion(validated, process.env).catch(() => {});
+      handleSaveQuestion(
+        {
+          question: validated.question,
+          domain: validated.domain,
+          tags: validated.tags,
+          difficulty: validated.difficulty,
+          title: validated.title,
+          scenario: validated.scenario,
+          code_snippet: validated.codeSnippet,
+          answer: validated.answer,
+          hint: validated.hint,
+          explanation: validated.explanation,
+          sector_level: validated.level,
+        },
+        process.env
+      ).catch((err) => {
+        console.warn('Could not archive question to Supabase:', err?.message);
+      });
 
-      return sendJson(res, 200, validated);
+      return sendJson(res, 200, { puzzle: validated, ...validated });
     } catch (err) {
       return sendJson(res, 500, { error: err.message || 'Internal Server Error' });
     }
@@ -334,11 +388,6 @@ Format your output strictly as a JSON object adhering to this schema:
     try {
       const body = await parseBody(req);
       const clientKey = req.headers['x-goog-api-key'] || body.customApiKey;
-      const apiKey = clientKey || GEMINI_API_KEY;
-
-      if (!apiKey) {
-        return sendJson(res, 400, { error: 'No Gemini API key available.' });
-      }
 
       const { question, codeSnippet, expectedAnswers, playerAnswer } = body;
 
@@ -357,43 +406,60 @@ Output strictly a JSON object:
 }
 `;
 
-      const evalModels = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
-      for (const em of evalModels) {
-        try {
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${em}:generateContent`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey,
-              },
-              body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: evalPrompt }] }],
-                generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-              }),
-            }
-          );
+      const evalResult = await executeGeminiWithRotation(
+        async (apiKey, _keyIndex) => {
+          const evalModels = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+          let lastErr = null;
 
-          if (geminiRes.ok) {
-            const data = await geminiRes.json();
-            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (rawText) {
-              const evalResult = JSON.parse(rawText);
-              return sendJson(res, 200, {
-                isCorrect: Boolean(evalResult.isCorrect),
-                feedback: evalResult.feedback || (evalResult.isCorrect ? 'Correct!' : 'Incorrect.'),
-              });
+          for (const em of evalModels) {
+            try {
+              const geminiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${em}:generateContent`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey,
+                  },
+                  body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: evalPrompt }] }],
+                    generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
+                  }),
+                }
+              );
+
+              if (!geminiRes.ok) {
+                const errText = await geminiRes.text();
+                const err = new Error(errText || `Gemini API HTTP ${geminiRes.status}`);
+                err.status = geminiRes.status;
+                throw err;
+              }
+
+              const data = await geminiRes.json();
+              const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (rawText) {
+                return JSON.parse(rawText);
+              }
+            } catch (err) {
+              lastErr = err;
+              if (err.status === 429 || err.status === 402 || err.status === 403) {
+                throw err; // Trigger key rotation to next key in pool
+              }
             }
           }
-        } catch {
-          // try next model
-        }
-      }
 
-      return sendJson(res, 200, { isCorrect: false, feedback: 'Incorrect answer. Try again.' });
+          throw lastErr || new Error('Evaluation parsing error');
+        },
+        clientKey,
+        process.env
+      );
+
+      return sendJson(res, 200, {
+        isCorrect: Boolean(evalResult.isCorrect),
+        feedback: evalResult.feedback || (evalResult.isCorrect ? 'Correct!' : 'Incorrect.'),
+      });
     } catch {
-      return sendJson(res, 500, { error: 'Internal evaluation error' });
+      return sendJson(res, 200, { isCorrect: false, feedback: 'Incorrect answer. Try again.' });
     }
   }
 

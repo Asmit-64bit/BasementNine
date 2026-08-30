@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { ArrowRight } from 'lucide-react';
 import { playTerminalBlip, playTapeStatic } from '../../utils/soundEffects';
@@ -34,18 +34,19 @@ const CHAPTER_STORIES: Record<number, string[]> = {
 
 export const ChapterPrologue: React.FC<ChapterPrologueProps> = ({ onComplete }) => {
   const { currentLevel } = useGameStore();
-  const [currentLineIndex, setCurrentLineIndex] = useState(-1);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [typedText, setTypedText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState(true);
   const [isDone, setIsDone] = useState(false);
   
-  const lines = CHAPTER_STORIES[currentLevel] || ["Unknown sector.", "Data corrupted."];
+  const lines = useMemo(
+    () => CHAPTER_STORIES[currentLevel] || ["Unknown sector.", "Data corrupted."],
+    [currentLevel]
+  );
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Start automatically
     playTapeStatic(1.0);
-    setCurrentLineIndex(0);
   }, []);
 
   useEffect(() => {
@@ -74,8 +75,6 @@ export const ChapterPrologue: React.FC<ChapterPrologueProps> = ({ onComplete }) 
       }
     };
 
-    setTypedText('');
-    setIsTyping(true);
     const startTimer = setTimeout(typeNextChar, 500);
 
     return () => {

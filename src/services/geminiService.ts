@@ -1,5 +1,6 @@
 import type { Puzzle } from '../data/puzzles';
 import { puzzles as defaultPuzzles } from '../data/puzzles';
+import { apiClient } from '../lib/apiClient';
 
 export interface PuzzleContext {
   id: number;
@@ -154,12 +155,7 @@ export function getGeminiApiKey(): string {
     }
   }
 
-  // Check Vite environment variables (server/build time env)
-  const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-  if (envKey && typeof envKey === 'string' && envKey.trim().length > 0) {
-    return envKey.trim();
-  }
-
+  // Client-side only reads custom user-provided override if saved by player
   return '';
 }
 
@@ -191,16 +187,23 @@ export function clearStoredGeminiApiKey() {
   }
 }
 
+import { useGameStore } from '../store/gameStore';
+
 /**
  * Generate an atmospheric coding escape room puzzle using Backend API or direct Gemini.
  */
 export async function generateGeminiPuzzle(
   puzzleId: number,
+  difficulty?: string,
   customApiKey?: string
 ): Promise<Puzzle> {
   const context = PUZZLE_SLOTS[puzzleId];
   const defaultFallback = defaultPuzzles.find((p) => p.id === puzzleId) || defaultPuzzles[0];
   const apiKey = customApiKey || getGeminiApiKey();
+
+  const store = useGameStore.getState();
+  const domain = store.selectedDomain || 'General Programming';
+  const finalDifficulty = difficulty || store.currentDifficulty || 'Beginner';
 
   // 1. First try calling our secure backend server
   try {
@@ -212,7 +215,7 @@ export async function generateGeminiPuzzle(
     const backendRes = await fetch('/api/ai/puzzle', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ puzzleId }),
+      body: JSON.stringify({ puzzleId, domain, difficulty: finalDifficulty }),
       signal: AbortSignal.timeout(15000),
     });
 
@@ -251,7 +254,7 @@ export async function generateGeminiPuzzle(
     'gemini-3.6-flash';
 
   const prompt = `
-You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
+You are the corrupted sentient core of a paranormal facility called "Basement Nine".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context?.level || 1} on the "${context?.objectName || 'Terminal'}".
 
 Topic: ${context?.topic || 'Programming & Security'}
@@ -322,7 +325,7 @@ Format your output strictly as a JSON object adhering to this schema:
       throw new Error('Gemini did not return a valid puzzle structure');
     }
 
-    return {
+    const generatedPuzzle: Puzzle = {
       id: puzzleId,
       level: context?.level || defaultFallback.level,
       title: jsonResult.title || defaultFallback.title,
@@ -334,6 +337,25 @@ Format your output strictly as a JSON object adhering to this schema:
       hint: jsonResult.hint || defaultFallback.hint || 'Examine logic state boundaries.',
       nextClue: jsonResult.nextClue || defaultFallback.nextClue || "The signal is fading... seek the next anomaly.",
     };
+
+    // Automatically archive to Supabase database
+    apiClient
+      .saveQuestion({
+        question: generatedPuzzle.question,
+        domain: (context as any)?.domain || 'Programming Fundamentals',
+        tags: (context as any)?.tags || [`sector-${generatedPuzzle.level}`],
+        difficulty: (context?.difficulty === 'Beginner' ? 'Easy' : context?.difficulty) || 'Intermediate',
+        title: generatedPuzzle.title,
+        scenario: generatedPuzzle.scenario,
+        code_snippet: generatedPuzzle.codeSnippet,
+        answer: generatedPuzzle.answer,
+        hint: jsonResult.hint,
+        explanation: jsonResult.explanation || 'Mainframe integrity verified.',
+        sector_level: generatedPuzzle.level,
+      })
+      .catch(() => {});
+
+    return generatedPuzzle;
   } catch {
     return defaultFallback;
   }
@@ -346,16 +368,18 @@ Format your output strictly as a JSON object adhering to this schema:
 export async function evaluateAnswerWithGemini(
   puzzle: Puzzle,
   userAnswer: string,
+  solveTimeMs?: number,
+  currentDifficulty?: string,
   customApiKey?: string
-): Promise<{ isCorrect: boolean; feedback?: string }> {
-  const trimmed = userAnswer.trim().toLowerCase();
-  if (!trimmed) return { isCorrect: false, feedback: 'Input cannot be empty.' };
-
-  // 1. Direct local matching against acceptable answers
-  const isDirectMatch = puzzle.answer.some(
-    (ans) => ans.trim().toLowerCase() === trimmed
+): Promise<{ isCorrect: boolean; feedback?: string; nextDifficulty?: string }> {
+  // 1. Try static direct matching first
+  const staticAnswers = Array.isArray(puzzle.answer) ? puzzle.answer : [String(puzzle.answer)];
+  const isDirectMatch = staticAnswers.some(
+    (a) => a.trim().toLowerCase() === userAnswer.trim().toLowerCase()
   );
-  if (isDirectMatch) {
+
+  if (isDirectMatch && !solveTimeMs) {
+    // Basic match without evaluation capability
     return { isCorrect: true };
   }
 
@@ -371,7 +395,7 @@ export async function evaluateAnswerWithGemini(
     const backendRes = await fetch('/api/ai/evaluate', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ puzzle, userAnswer }),
+      body: JSON.stringify({ puzzle, userAnswer, solveTimeMs, currentDifficulty }),
     });
 
     if (backendRes.ok) {
@@ -380,6 +404,7 @@ export async function evaluateAnswerWithGemini(
         return {
           isCorrect: data.isCorrect,
           feedback: data.feedback || (data.isCorrect ? 'ACCESS GRANTED.' : 'Incorrect.'),
+          nextDifficulty: data.nextDifficulty
         };
       }
     }
