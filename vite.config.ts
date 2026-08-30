@@ -43,27 +43,13 @@ function geminiDevPlugin(env: Record<string, string>): Plugin {
             try {
               const data = body ? JSON.parse(body) : {};
               const puzzleId = Number(data.puzzleId) || 1;
-<<<<<<< HEAD
               const clientKey = req.headers['x-goog-api-key'] || data.customApiKey;
 
               const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
-              const domain = data.domain || context.domain || 'Programming Fundamentals';
-              const difficulty = data.difficulty || context.difficulty || 'Easy';
-
-              const prompt = `You are the corrupted sentient core of a paranormal facility called "Basement Nine".
-Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
-=======
-              const domain = data.domain || 'General Programming';
-              const difficulty = data.difficulty || 'Beginner';
+              const domain = data.domain || context.domain || 'General Programming';
+              const difficulty = data.difficulty || context.difficulty || 'Beginner';
               const knowledgeBase = data.knowledgeBase || '';
-              const apiKey = req.headers['x-goog-api-key'] || env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
 
-              if (!apiKey) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                return res.end(JSON.stringify({ error: 'No Gemini API key available.' }));
-              }
-
-              const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
               const systemInstruction = `You are the corrupted sentient core of a paranormal facility called "Schrodinger's Abyss".
 You generate coding / cybersecurity escape room puzzles.
 
@@ -72,7 +58,6 @@ CRITICAL INSTRUCTION: You MUST ONLY generate questions and code snippets based s
               const userPrompt = `Generate puzzle for:
 Sector: ${context.level}
 Terminal Name: "${context.objectName}"
->>>>>>> Gemini2
 Domain Focus: ${domain}
 Difficulty Level: ${difficulty}
 Expected Reward on Solve: "${context.reward}"
