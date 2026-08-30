@@ -227,6 +227,7 @@ export async function generateGeminiPuzzle(
           codeSnippet: data.puzzle.codeSnippet ?? defaultFallback.codeSnippet,
           answer: Array.isArray(data.puzzle.answer) ? data.puzzle.answer : [String(data.puzzle.answer)],
           reward: context?.reward || defaultFallback.reward,
+          nextClue: data.puzzle.nextClue || defaultFallback.nextClue || "The signal is fading... seek the next anomaly.",
         };
       }
     }
@@ -266,7 +267,8 @@ Format your output strictly as a JSON object adhering to this schema:
   "question": string,
   "codeSnippet": string,
   "answer": string[],
-  "hint": string
+  "hint": string,
+  "nextClue": "a cryptic lore clue pointing to the next puzzle"
 }
 `;
 
@@ -322,6 +324,7 @@ Format your output strictly as a JSON object adhering to this schema:
       codeSnippet: jsonResult.codeSnippet ?? defaultFallback.codeSnippet,
       answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer)],
       reward: context?.reward || defaultFallback.reward,
+      nextClue: jsonResult.nextClue || defaultFallback.nextClue || "The signal is fading... seek the next anomaly.",
     };
   } catch {
     return defaultFallback;
