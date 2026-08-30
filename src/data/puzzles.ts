@@ -10,35 +10,35 @@ export type Puzzle = {
 };
 
 export const puzzles: Puzzle[] = [
-  // --- LEVEL 1: Laboratory ---
+  // --- LEVEL 1: Room 1 — The Terminal ---
   {
     id: 1,
     level: 1,
-    title: "The Syntax Cipher",
-    scenario: "The computer is locked. You find a corrupted Python script on the screen.",
-    question: "What single character is missing to make this code compile?",
-    codeSnippet: "def greet(name)\n    return 'Hello ' + name",
-    answer: [":", ": "],
-    reward: "Gold Key"
+    title: "Nine Years of Logs",
+    scenario: "A single screen glows in the corner. Nine years of logs, unsorted, unindexed.\n\nThe voice comes from the speakers, calm and a little rusty:\n\"You want the exit. I want to know who I'm dealing with. Find my name in the logs — one line out of forty thousand.\"\n\"Take your time. I'll be counting.\"",
+    question: "What is the name of the voice hidden in the 40,000 log records?",
+    codeSnippet: "[LOG 00001] SYSTEM BOOT - KERNEL v4.19.0-SYS\n[LOG 00128] DISPATCH MEMORY ARCHIVE INITIALIZED\n...\n[LOG 38419] AUDIO PROMPT INJECTED // DISPATCH VOICE ID: \"MALIK\"\n[LOG 38420] VOICE OVERRIDE SYNC: DR. MALIK [ACTIVE]\n...\n[LOG 40000] LOG STREAM END - 40,000 RECORDS UNSORTED",
+    answer: ["MALIK", "Malik", "malik", "DR. MALIK", "Dr. Malik", "dr malik", "Dr Malik", "dr. malik"],
+    reward: "Terminal Clearance"
   },
   {
     id: 2,
     level: 1,
-    title: "The Infinite Loop Trap",
-    scenario: "The drawer is secured by an electronic lock running an infinite loop.",
-    question: "The lock won't open because the system is crashing. What line of code must be added to fix this loop?",
-    codeSnippet: "let x = 10;\nwhile(x > 0) {\n  console.log('Unlocking...');\n  // ADD CODE HERE \n}",
-    answer: ["x--;", "x--", "x -= 1;", "x-=1;", "x -= 1", "x-=1", "x = x - 1;", "x=x-1;", "x = x - 1", "x=x-1", "break;", "break"],
-    reward: "Master Key"
+    title: "Terminal Subsystem Override",
+    scenario: "The log terminal demands confirmation of the speaker's name to purge security locks.",
+    question: "Confirm the speaker name extracted from line 38,419.",
+    codeSnippet: "let voiceId = 'MALIK';\nconsole.log('Speaker identified:', voiceId);",
+    answer: ["MALIK", "Malik", "malik", "DR. MALIK", "Dr. Malik", "dr malik"],
+    reward: "Terminal Key"
   },
   {
     id: 3,
     level: 1,
-    title: "Level 1 Exit",
-    scenario: "The main exit door terminal was hacked! The logs show the breach query.",
-    question: "You are given the query used in the login form. What type of attack was used here?",
-    codeSnippet: "SELECT * FROM users \nWHERE username = 'admin' \nAND password = '' OR '1'='1'",
-    answer: ["SQL Injection", "SQLi", "SQL injection attack", "sql injection"],
+    title: "Room 1 Exit",
+    scenario: "The heavy door unlatches. The speaker echoes across the empty office:\n\n\"Slow. But honest. Let's see what else is slow about you.\"",
+    question: "Type 'EXIT' or 'PROCEED' to leave Room 1 and continue deeper into Basement Nine.",
+    codeSnippet: "SYSTEM STATUS: CLEARANCE GRANTED\nEXIT LOCK: UNLOCKED\nVOICE FEED: \"Slow. But honest. Let's see what else is slow about you.\"",
+    answer: ["EXIT", "exit", "PROCEED", "proceed", "SLOW BUT HONEST", "slow. but honest.", "slow but honest", "UNLOCK", "unlock"],
     reward: "Escape"
   },
 
