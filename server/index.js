@@ -246,18 +246,23 @@ const server = http.createServer(async (req, res) => {
       const body = await parseBody(req);
       const puzzleId = Number(body.puzzleId) || 1;
       const adaptiveDifficulty = body.difficulty;
+      const customDomain = body.domain;
       const clientKey = req.headers['x-goog-api-key'] || body.customApiKey;
 
       const context = PUZZLE_SLOTS[puzzleId] || PUZZLE_SLOTS[1];
       const finalDifficulty = adaptiveDifficulty || context.difficulty;
+      
+      const finalDomain = customDomain && customDomain !== 'General Programming' ? customDomain : context.domain;
+      const finalTopic = finalDomain === context.domain ? context.topic : "An appropriate advanced topic for this domain";
+      const finalTags = finalDomain === context.domain ? context.tags.join(', ') : finalDomain;
 
       const prompt = `
 You are the corrupted sentient core of a paranormal facility called "Basement Nine".
 Generate a coding / cybersecurity escape room puzzle for Sector ${context.level} on the "${context.objectName}".
 
-Domain: ${context.domain}
-Tags: ${context.tags.join(', ')}
-Topic: ${context.topic}
+Domain: ${finalDomain}
+Tags: ${finalTags}
+Topic: ${finalTopic}
 Difficulty: ${finalDifficulty}
 Expected Reward on Solve: "${context.reward}"
 
