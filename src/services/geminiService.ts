@@ -213,21 +213,27 @@ export async function generateGeminiPuzzle(
       method: 'POST',
       headers,
       body: JSON.stringify({ puzzleId }),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (backendRes.ok) {
       const data = await backendRes.json();
-      if (data?.puzzle && data.puzzle.question && data.puzzle.answer) {
+      // Two backends exist: the Vite dev middleware wraps the puzzle in
+      // { puzzle: {...} }, while the standalone server/index.js returns it
+      // flat. Accept either shape.
+      const puzzleData = data?.puzzle ?? data;
+      if (puzzleData && puzzleData.question && puzzleData.answer) {
         return {
           id: puzzleId,
           level: context?.level || defaultFallback.level,
-          title: data.puzzle.title || defaultFallback.title,
-          scenario: data.puzzle.scenario || defaultFallback.scenario,
-          question: data.puzzle.question || defaultFallback.question,
-          codeSnippet: data.puzzle.codeSnippet ?? defaultFallback.codeSnippet,
-          answer: Array.isArray(data.puzzle.answer) ? data.puzzle.answer : [String(data.puzzle.answer)],
+          title: puzzleData.title || defaultFallback.title,
+          scenario: puzzleData.scenario || defaultFallback.scenario,
+          question: puzzleData.question || defaultFallback.question,
+          codeSnippet: puzzleData.codeSnippet ?? defaultFallback.codeSnippet,
+          answer: Array.isArray(puzzleData.answer) ? puzzleData.answer : [String(puzzleData.answer)],
           reward: context?.reward || defaultFallback.reward,
-          nextClue: data.puzzle.nextClue || defaultFallback.nextClue || "The signal is fading... seek the next anomaly.",
+          hint: puzzleData.hint || defaultFallback.hint || 'Examine logic state boundaries.',
+          nextClue: puzzleData.nextClue || defaultFallback.nextClue || "The signal is fading... seek the next anomaly.",
         };
       }
     }
@@ -293,6 +299,7 @@ Format your output strictly as a JSON object adhering to this schema:
                 temperature: 0.8,
               },
             }),
+            signal: AbortSignal.timeout(12000),
           }
         );
 
@@ -324,6 +331,7 @@ Format your output strictly as a JSON object adhering to this schema:
       codeSnippet: jsonResult.codeSnippet ?? defaultFallback.codeSnippet,
       answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer)],
       reward: context?.reward || defaultFallback.reward,
+      hint: jsonResult.hint || defaultFallback.hint || 'Examine logic state boundaries.',
       nextClue: jsonResult.nextClue || defaultFallback.nextClue || "The signal is fading... seek the next anomaly.",
     };
   } catch {

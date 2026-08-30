@@ -3,7 +3,7 @@ import { RigidBody } from '@react-three/rapier';
 
 export const Desk: React.FC = () => {
   return (
-    <RigidBody type="fixed" position={[0, 0, -8]}>
+    <RigidBody type="fixed" position={[3, 0, -1.3]} scale={0.55}>
       {/* Heavy Industrial Workstation Table Top */}
       <mesh position={[0, 0.95, 0]}>
         <boxGeometry args={[4.4, 0.12, 2.2]} />

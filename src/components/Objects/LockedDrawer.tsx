@@ -28,7 +28,7 @@ export const LockedDrawer: React.FC = () => {
   const isUnlocked = hasItem('Master Key');
 
   return (
-    <RigidBody type="fixed" position={[-1.7, 0.45, -7.8]}>
+    <RigidBody type="fixed" position={[3.9, 0.45, -1.7]}>
       {/* Heavy Steel Safe Body */}
       <mesh
         position={[0, 0, 0]}

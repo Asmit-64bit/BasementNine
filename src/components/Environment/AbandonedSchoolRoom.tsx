@@ -233,7 +233,7 @@ type GLTFResult = GLTF & {
 
 export function AbandonedSchoolRoom(props: JSX.IntrinsicElements['group']) {
   const { nodes, materials } = useGLTF('/day_3._abandoned_school_room.glb') as GLTFResult
-  const { setActivePuzzle } = useGameStore()
+  const { setActivePuzzle, setBookModalOpen } = useGameStore()
   
   return (
     <>
@@ -390,7 +390,11 @@ export function AbandonedSchoolRoom(props: JSX.IntrinsicElements['group']) {
           <mesh geometry={nodes.Cylinder002_metalic_0.geometry} material={materials.metalic} />
         </group>
         <group position={[1115.734, 188.204, -745.103]}>
-          <mesh geometry={nodes.Cube004_book1_0.geometry} material={materials.book1} />
+          <mesh
+            geometry={nodes.Cube004_book1_0.geometry}
+            material={materials.book1}
+            userData={{ name: 'Study Notes', interactable: true, onInteract: () => setBookModalOpen(true) }}
+          />
           <mesh geometry={nodes.Cube004_paper_0.geometry} material={materials.paper} />
           <mesh geometry={nodes.Cube004_book2_0.geometry} material={materials.book2} />
           <mesh geometry={nodes.Cube004_book3_0.geometry} material={materials.book3} />

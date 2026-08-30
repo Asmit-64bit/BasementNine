@@ -247,8 +247,9 @@ Requirements:
 3. "question": Clear, concise question asking the player to identify a missing token, fix a bug, specify an attack name, or provide a regex/code fix.
 4. "codeSnippet": A short, clean code snippet (in Python, JavaScript/TypeScript, SQL, or JSON) containing the bug or puzzle (or empty string if purely conceptual).
 5. "answer": Array of 2-8 acceptable string variations of the correct answer (case-insensitive, including shorthand, punctuation variations).
-6. "hint": A subtle, in-character cryptic clue.
+6. "hint": A subtle, in-character cryptic clue that nudges toward the answer without giving it away, grounded in the same Domain/Topic above.
 7. "explanation": 1-sentence technical explanation of why the solution works.
+8. "nextClue": A short, cryptic in-character line of lore foreshadowing the next anomaly ahead — do not reveal the answer to anything, just atmosphere.
 
 Format your output strictly as a JSON object adhering to this schema:
 {
@@ -258,7 +259,8 @@ Format your output strictly as a JSON object adhering to this schema:
   "codeSnippet": string,
   "answer": string[],
   "hint": string,
-  "explanation": string
+  "explanation": string,
+  "nextClue": string
 }
 `;
 
@@ -315,6 +317,7 @@ Format your output strictly as a JSON object adhering to this schema:
         answer: Array.isArray(jsonResult.answer) ? jsonResult.answer : [String(jsonResult.answer || '')],
         hint: jsonResult.hint || 'Inspect the terminal memory parameters carefully.',
         explanation: jsonResult.explanation || 'Mainframe logic verified. Access granted.',
+        nextClue: jsonResult.nextClue || 'The signal is fading... seek the next anomaly.',
       };
 
       // Automatically archive generated question to database in background

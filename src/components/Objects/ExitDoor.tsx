@@ -31,7 +31,7 @@ export const ExitDoor: React.FC = () => {
   };
 
   return (
-    <RigidBody type="fixed" position={[0, 2.5, 9.85]}>
+    <RigidBody type="fixed" position={[3, 1.3, -1.9]} rotation={[0, Math.PI, 0]} scale={0.5}>
       {/* Massive Industrial Outer Door Frame */}
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[4.2, 5.2, 0.4]} />

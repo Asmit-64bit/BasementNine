@@ -24,7 +24,7 @@ export const Computer: React.FC = () => {
   };
 
   return (
-    <RigidBody type="fixed" position={[0, 1.05, -8]}>
+    <RigidBody type="fixed" position={[3, 0.52, -1.3]} scale={0.55}>
       {/* Monitor Bezel */}
       <mesh
         position={[0, 0.45, -0.2]}

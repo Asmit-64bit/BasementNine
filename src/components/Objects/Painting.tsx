@@ -15,7 +15,7 @@ export const Painting: React.FC = () => {
   };
 
   return (
-    <RigidBody type="fixed" position={[9.85, 2.5, 0]} rotation={[0, -Math.PI / 2, 0]}>
+    <RigidBody type="fixed" position={[4.15, 1.9, 2]} rotation={[0, -Math.PI / 2, 0]} scale={0.5}>
       {/* Heavy Ornate Cyberpunk Frame */}
       <mesh
         position={[0, 0, 0]}

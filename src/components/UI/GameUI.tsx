@@ -20,6 +20,7 @@ import {
   generateGeminiPuzzle,
   evaluateAnswerWithGemini,
 } from '../../services/geminiService';
+import { StudyNotesModal } from './StudyNotesModal';
 import {
   playSolveChime,
   playErrorGlitch,
@@ -37,6 +38,7 @@ export const GameUI: React.FC = () => {
     addToInventory,
     setEscaped,
     escaped,
+    bookModalOpen,
     currentLevel,
     setAppState,
     completeLevel,
@@ -256,7 +258,7 @@ export const GameUI: React.FC = () => {
           } else {
             addToInventory(activePuzzle.reward);
           }
-        }, 1200);
+        }, 2400);
       } else {
         playErrorGlitch();
         recordError();
@@ -363,7 +365,7 @@ export const GameUI: React.FC = () => {
   return (
     <div
       className="luto-hud-overlay"
-      style={{ pointerEvents: activePuzzleId || showExitModal ? 'auto' : 'none' }}
+      style={{ pointerEvents: activePuzzleId || showExitModal || bookModalOpen ? 'auto' : 'none' }}
     >
       {/* Low Sanity Psychological Fear Vignette */}
       {isHighFear && (
@@ -790,6 +792,24 @@ export const GameUI: React.FC = () => {
                     </div>
                   )}
 
+                  {feedback && activePuzzle.nextClue && (
+                    <div
+                      style={{
+                        marginTop: '8px',
+                        paddingLeft: '20px',
+                        color: '#8b929e',
+                        fontSize: '0.75rem',
+                        fontStyle: 'italic',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '6px',
+                      }}
+                    >
+                      <Sparkles size={12} style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <span>{activePuzzle.nextClue}</span>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem' }}>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button
@@ -866,6 +886,8 @@ export const GameUI: React.FC = () => {
           </div>
         </div>
       )}
+
+      <StudyNotesModal />
     </div>
   );
 };

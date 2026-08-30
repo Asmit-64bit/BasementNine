@@ -32,6 +32,7 @@ export const Player = () => {
     setHoveredObject,
     hoveredObject,
     activePuzzleId,
+    bookModalOpen,
     currentLevel,
     appState,
     flashlightOn,
@@ -45,7 +46,9 @@ export const Player = () => {
   useEffect(() => {
     if (ref.current) {
       const spawnPos =
-        currentLevel === 3
+        currentLevel === 1
+          ? { x: 3, y: 1.2, z: 3 }
+          : currentLevel === 3
           ? { x: 0.44, y: 1.2, z: -0.36 }
           : currentLevel === 5
           ? { x: 0, y: 1.2, z: 0 }
@@ -59,11 +62,11 @@ export const Player = () => {
   }, [currentLevel, appState]);
 
   useEffect(() => {
-    if (activePuzzleId) {
+    if (activePuzzleId || bookModalOpen) {
       document.exitPointerLock();
       keys.current.interact = false;
     }
-  }, [activePuzzleId]);
+  }, [activePuzzleId, bookModalOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -109,7 +112,7 @@ export const Player = () => {
 
     const velocity = ref.current.linvel();
 
-    if (activePuzzleId) {
+    if (activePuzzleId || bookModalOpen) {
       ref.current.setLinvel({ x: 0, y: velocity.y, z: 0 }, true);
       return;
     }

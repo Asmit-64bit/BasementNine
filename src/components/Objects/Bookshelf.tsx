@@ -14,7 +14,7 @@ export const Bookshelf: React.FC = () => {
   };
 
   return (
-    <RigidBody type="fixed" position={[-9.6, 1.8, -4.5]} rotation={[0, Math.PI / 2, 0]}>
+    <RigidBody type="fixed" position={[1.95, 0.99, -1.5]} rotation={[0, Math.PI / 2, 0]} scale={0.55}>
       {/* Heavy Steel & Dark Wood Library Archive Frame */}
       <mesh
         position={[0, 0, 0]}

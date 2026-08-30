@@ -87,6 +87,8 @@ interface GameState {
   setIsGeneratingPuzzle: (val: boolean) => void;
   escaped: boolean;
   setEscaped: (val: boolean) => void;
+  bookModalOpen: boolean;
+  setBookModalOpen: (val: boolean) => void;
   appState: 'LANDING' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING';
   setAppState: (state: 'LANDING' | 'LEVEL_SELECT' | 'CHAPTER_PROLOGUE' | 'PLAYING') => void;
   currentLevel: number;
@@ -201,6 +203,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   setIsGeneratingPuzzle: (val) => set({ isGeneratingPuzzle: val }),
   escaped: false,
   setEscaped: (val) => set({ escaped: val }),
+  bookModalOpen: false,
+  setBookModalOpen: (val) => set({ bookModalOpen: val }),
   appState: 'LANDING',
   setAppState: (state) => {
     set({ appState: state });

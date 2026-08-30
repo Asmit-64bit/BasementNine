@@ -48,27 +48,22 @@ export const LevelLighting: React.FC = () => {
 
   return (
     <>
-      {/* ----------------- LEVEL 1: LABORATORY LIGHTING ----------------- */}
+      {/* ----------------- LEVEL 1: APARTMENT LIGHTING ----------------- */}
       {currentLevel === 1 && (
         <>
-          <fog attach="fog" args={['#0f172a', 16, 45]} />
-          <ambientLight intensity={1.0} color="#e2e8f0" />
+          <fog attach="fog" args={['#0f172a', 6, 18]} />
+          <ambientLight intensity={0.7} color="#e2e8f0" />
           <pointLight
             ref={labFlickerLightRef}
-            position={[0, 4.2, 0]}
-            intensity={2.4}
-            distance={25}
+            position={[3, 2.4, 1]}
+            intensity={1.8}
+            distance={8}
             color="#f8fafc"
             castShadow
           />
-          <pointLight position={[0, 2.2, -7.5]} intensity={2.0} distance={12} color="#34d399" />
-          <pointLight position={[0, 3.8, 8.5]} intensity={1.8} distance={14} color="#f87171" />
-          <pointLight position={[-7.5, 3.0, -4.5]} intensity={1.5} distance={12} color="#38bdf8" />
-          <pointLight position={[7.5, 3.0, 0]} intensity={1.5} distance={12} color="#fbbf24" />
-          <pointLight position={[9.2, 2.5, -6]} intensity={1.4} distance={11} color="#cbd5e1" />
-          <pointLight position={[9.2, 2.5, 6]} intensity={1.4} distance={11} color="#cbd5e1" />
-          <pointLight position={[-9.2, 2.5, 4]} intensity={1.4} distance={11} color="#cbd5e1" />
-          <pointLight position={[0, 2.5, -9.2]} intensity={1.4} distance={11} color="#cbd5e1" />
+          <pointLight position={[3, 2.2, -1.7]} intensity={1.3} distance={5} color="#34d399" />
+          <pointLight position={[4, 2.2, 3.5]} intensity={1.2} distance={5} color="#f87171" />
+          <pointLight position={[2, 2.2, -0.5]} intensity={1.0} distance={4} color="#38bdf8" />
         </>
       )}
 
