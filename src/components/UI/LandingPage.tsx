@@ -22,11 +22,13 @@ export const LandingPage: React.FC = () => {
   const [showLoreDossier, setShowLoreDossier] = useState(false);
   const [isGhostManifested, setIsGhostManifested] = useState(false);
   const [isJumpscare, setIsJumpscare] = useState(false);
-  const [isHoveringEntity, setIsHoveringEntity] = useState(false);
   const [whisperText, setWhisperText] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const whisperTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasProgress = completedLevels.length > 0 || unlockedLevel > 1;
+
+  const [ghostForm, setGhostForm] = useState<'standing' | 'crawling'>('standing');
+  const [isHoveringGate, setIsHoveringGate] = useState(false);
 
   const triggerJumpscare = useCallback(() => {
     setIsJumpscare(true);
@@ -35,25 +37,26 @@ export const LandingPage: React.FC = () => {
     }, 600);
   }, []);
 
-  // Periodic Sadako Apparition Loop (rare psychological occurrence: every 45 - 80 seconds)
+  // Periodic Sadako Apparition on the Gate (Occasional spawn: every 18 - 38 seconds)
   useEffect(() => {
     const scheduleNextManifestation = () => {
-      const nextDelay = 45000 + Math.random() * 35000;
+      const nextDelay = 18000 + Math.random() * 20000;
       timerRef.current = setTimeout(() => {
+        setGhostForm(Math.random() > 0.4 ? 'standing' : 'crawling');
         setIsGhostManifested(true);
 
-        // Low chance for a brief, silent screen takeover
-        if (Math.random() < 0.15) {
+        // Low chance for a brief jumpscare
+        if (Math.random() < 0.12) {
           setTimeout(() => {
             triggerJumpscare();
-          }, 1200);
+          }, 2000);
         }
 
-        // Disappear after 3.5 seconds
+        // Disappear after 4.5 seconds
         setTimeout(() => {
           setIsGhostManifested(false);
           scheduleNextManifestation();
-        }, 3500);
+        }, 4500);
       }, nextDelay);
     };
 
@@ -63,10 +66,10 @@ export const LandingPage: React.FC = () => {
     };
   }, [triggerJumpscare]);
 
-  // Periodic Sadako Whispers (every 40 - 70 seconds)
+  // Periodic Sadako Whispers (every 35 - 60 seconds)
   useEffect(() => {
     const scheduleNextWhisper = () => {
-      const delay = 40000 + Math.random() * 30000;
+      const delay = 35000 + Math.random() * 25000;
       whisperTimerRef.current = setTimeout(() => {
         const randomQuote = SADAKO_WHISPERS[Math.floor(Math.random() * SADAKO_WHISPERS.length)];
         setWhisperText(randomQuote);
@@ -83,16 +86,12 @@ export const LandingPage: React.FC = () => {
     };
   }, []);
 
-  const handleDoorwayClick = () => {
-    triggerJumpscare();
-  };
-
   const handleButtonClick = (action: () => void) => {
     playTerminalBlip();
     action();
   };
 
-  const ghostActive = isGhostManifested || isHoveringEntity || isJumpscare;
+  const ghostActive = isGhostManifested || isHoveringGate || isJumpscare;
 
   if (showPrologue) {
     return <HorrorPrologue onComplete={() => setShowPrologue(false)} />;
@@ -118,32 +117,24 @@ export const LandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Aesthetic Horror Backdrop (Volumetric Corridor & Sadako Apparition) */}
-      <div className="luto-lore-backdrop">
-        <div className="luto-fog-layer" />
-        <div
-          className="luto-corridor-silhouette"
-          onMouseEnter={() => setIsHoveringEntity(true)}
-          onMouseLeave={() => setIsHoveringEntity(false)}
-          onClick={handleDoorwayClick}
-          style={{ cursor: 'pointer', pointerEvents: 'auto' }}
-          title="Confront Sadako"
-        >
-          <div className="luto-doorway-inner">
-            {/* Sadako Yamamura Standing in the Doorway */}
-            <div className={`luto-ghost-wrapper ${ghostActive ? 'manifested' : ''} ${isJumpscare ? 'jumpscare' : ''}`}>
-              <img
-                src="/sadako.png"
-                alt="Sadako Yamamura"
-                className="luto-sadako-png"
-              />
-            </div>
+      {/* Sadako Corridor Gate Manifestation */}
+      <div
+        className="gate-sadako-anchor"
+        onMouseEnter={() => setIsHoveringGate(true)}
+        onMouseLeave={() => setIsHoveringGate(false)}
+        onClick={triggerJumpscare}
+        title="Sector 01 Gate Threshold"
+      >
+        {/* Red Emergency Lamp Backlight */}
+        <div className={`gate-door-red-glow ${ghostActive ? 'active' : ''}`} />
 
-            <div className="luto-doorway-light" style={{ opacity: ghostActive ? 0.15 : 0.8 }} />
-            <span style={{ position: 'absolute', top: '15px', fontSize: '9px', letterSpacing: '0.45em', color: ghostActive ? '#ef4444' : 'rgba(255,255,255,0.2)', textTransform: 'uppercase', transition: 'color 0.3s ease' }}>
-              {isJumpscare ? '7 DAYS' : ghostActive ? 'SADAKO IS WATCHING' : 'SECTOR 04-A'}
-            </span>
-          </div>
+        {/* Ghost Apparition */}
+        <div className={`gate-sadako-figure ${ghostActive ? 'active' : ''} ${ghostForm}`}>
+          <img
+            src={ghostForm === 'crawling' ? '/sadako-crawl.png' : '/sadako.png'}
+            alt="Sadako Yamamura"
+            className="gate-sadako-img"
+          />
         </div>
       </div>
 
