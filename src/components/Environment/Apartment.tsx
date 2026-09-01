@@ -1,7 +1,7 @@
 import { useGLTF } from '@react-three/drei';
 
 export function Model(props: JSX.IntrinsicElements['group']) {
-  const { scene } = useGLTF('/apartment_in_not_new_building.glb');
+  const { scene } = useGLTF('/Abandoned-hospital-corridor-map.glb');
   return (
     <group {...props} dispose={null}>
       <primitive object={scene} />
@@ -9,4 +9,4 @@ export function Model(props: JSX.IntrinsicElements['group']) {
   );
 }
 
-useGLTF.preload('/apartment_in_not_new_building.glb');
+useGLTF.preload('/Abandoned-hospital-corridor-map.glb');

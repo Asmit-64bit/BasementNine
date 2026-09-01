@@ -5,12 +5,7 @@ import { ServerRoom } from './Environment/ServerRoom';
 import { ReactorCore } from './Environment/ReactorCore';
 import { AbandonedSchoolRoom } from './Environment/AbandonedSchoolRoom';
 import { AbandonedOffice } from './Environment/AbandonedOffice';
-import { Desk } from './Objects/Desk';
-import { Computer } from './Objects/Computer';
-import { Painting } from './Objects/Painting';
-import { Bookshelf } from './Objects/Bookshelf';
-import { LockedDrawer } from './Objects/LockedDrawer';
-import { ExitDoor } from './Objects/ExitDoor';
+import { HospitalHotspots } from './Objects/HospitalHotspots';
 
 export const LevelManager = () => {
   const { currentLevel } = useGameStore();
@@ -19,25 +14,22 @@ export const LevelManager = () => {
     case 1:
       return (
         <>
-          {/* Visual only — the source scan is ~445k triangles, far too dense
+          {/* Visual only — the source scan is a dense mesh, far too heavy
               for a trimesh collider (it hangs Rapier's cooking step). Player
-              containment uses simple invisible boundary colliders instead,
-              sized to the explored playable room. */}
-          <Apartment position={[0, 1.63, 0]} />
+              containment uses an invisible boundary shell instead, sized to
+              the scanned corridor's real bounding box (floor ~y=0 after the
+              +0.1 offset below) so the player can roam the whole corridor
+              rather than being boxed into the old apartment's footprint. */}
+          <Apartment position={[0, 0.1, 0]} />
           <RigidBody type="fixed">
-            <CuboidCollider args={[1.25, 0.5, 3.1]} position={[3.05, -0.5, 1.1]} />
-            <CuboidCollider args={[1.25, 0.5, 3.1]} position={[3.05, 3.1, 1.1]} />
-            <CuboidCollider args={[0.5, 1.3, 3.1]} position={[1.3, 1.3, 1.1]} />
-            <CuboidCollider args={[0.5, 1.3, 3.1]} position={[4.8, 1.3, 1.1]} />
-            <CuboidCollider args={[1.25, 1.3, 0.5]} position={[3.05, 1.3, -2.5]} />
-            <CuboidCollider args={[1.25, 1.3, 0.5]} position={[3.05, 1.3, 4.7]} />
+            <CuboidCollider args={[15.9, 0.1, 6.1]} position={[0.46, -0.1, -0.17]} />
+            <CuboidCollider args={[15.9, 0.1, 6.1]} position={[0.46, 2.85, -0.17]} />
+            <CuboidCollider args={[15.9, 1.4, 0.1]} position={[0.46, 1.4, 5.85]} />
+            <CuboidCollider args={[15.9, 1.4, 0.1]} position={[0.46, 1.4, -6.19]} />
+            <CuboidCollider args={[0.1, 1.4, 6.1]} position={[16.29, 1.4, -0.17]} />
+            <CuboidCollider args={[0.1, 1.4, 6.1]} position={[-15.38, 1.4, -0.17]} />
           </RigidBody>
-          <Desk />
-          <Computer />
-          <Painting />
-          <Bookshelf />
-          <LockedDrawer />
-          <ExitDoor />
+          <HospitalHotspots />
         </>
       );
     case 2:
